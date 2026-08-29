@@ -24,5 +24,6 @@ bcrypt>=4.1
 google-genai>=1.0
 PyPDF2>=3.0.1
 
-# Optional: PostgreSQL driver. Uncomment when DATABASE_URL points at Postgres.
-# asyncpg>=0.29
+# PostgreSQL driver. Required whenever DATABASE_URL points at Postgres, which
+# every managed deployment does; harmless on a SQLite dev machine.
+asyncpg>=0.29

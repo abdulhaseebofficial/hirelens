@@ -76,6 +76,21 @@ class Settings(BaseSettings):
             return [origin.strip() for origin in stripped.split(",") if origin.strip()]
         return value
 
+    @field_validator("database_url", mode="after")
+    @classmethod
+    def _use_async_driver(cls, value: str) -> str:
+        """Managed hosts hand out sync DSNs; SQLAlchemy's async engine needs a driver.
+
+        Render, Railway and Heroku all inject `postgres://` or `postgresql://`,
+        which create_async_engine rejects. Rewrite those to asyncpg rather than
+        making every deployment remember to.
+        """
+        cleaned = value.strip()
+        for prefix in ("postgres://", "postgresql://"):
+            if cleaned.startswith(prefix):
+                return "postgresql+asyncpg://" + cleaned[len(prefix) :]
+        return cleaned
+
     @field_validator("google_api_key", mode="after")
     @classmethod
     def _reject_placeholder_key(cls, value: str) -> str:

@@ -231,6 +231,11 @@ which on Vercel resolves to the static site itself and 404s.
 `$PORT` from the platform. It works as-is on Railway, Render, Fly.io and Cloud Run — point the
 service at the `backend/` directory as the build context.
 
+**Render, in a few clicks:** [`render.yaml`](render.yaml) is a blueprint. In Render pick
+**New → Blueprint** and choose this repo; it creates the API service plus a Postgres database and
+wires `DATABASE_URL` between them. Two values are deliberately left blank and must be filled in
+before the first boot — `GOOGLE_API_KEY` and `CORS_ORIGINS`.
+
 Environment variables the API needs in production:
 
 | Variable | Notes |
@@ -244,17 +249,16 @@ Environment variables the API needs in production:
 ### Use Postgres, not SQLite
 
 SQLite lives on the container filesystem, which is wiped on every deploy and not shared between
-instances. Point `DATABASE_URL` at Postgres and uncomment the driver in
-[`backend/requirements.txt`](backend/requirements.txt):
-
-```diff
--# asyncpg>=0.29
-+asyncpg>=0.29
-```
+instances, so point `DATABASE_URL` at Postgres. The `asyncpg` driver ships in
+[`backend/requirements.txt`](backend/requirements.txt), so there is nothing to uncomment.
 
 ```
 DATABASE_URL=postgresql+asyncpg://user:password@host:5432/hirelens
 ```
+
+Managed hosts hand out a sync DSN (`postgres://…`), which SQLAlchemy's async engine rejects.
+`app/core/config.py` rewrites those to `postgresql+asyncpg://` on load, so the value Render or
+Railway injects works untouched.
 
 ### Order of operations
 
@@ -287,6 +291,7 @@ cv-analyzer-pro/
 ├── legacy/                  # original Streamlit prototype and its requirements/runtime
 ├── docs/screenshots/        # images used by this README
 ├── vercel.json              # builds the frontend on Vercel
+├── render.yaml              # blueprint for the API + Postgres on Render
 └── .github/workflows/ci.yml
 ```
 

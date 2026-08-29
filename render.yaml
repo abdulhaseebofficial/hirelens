@@ -1,0 +1,49 @@
+# Render blueprint for the HireLens API.
+#
+# Render → New → Blueprint → pick this repo. It creates the API service and a
+# Postgres database, and wires DATABASE_URL between them. Two values are left
+# blank on purpose and must be filled in the dashboard before the first boot:
+# GOOGLE_API_KEY and CORS_ORIGINS.
+#
+# The frontend is not here — it deploys to Vercel from vercel.json.
+
+services:
+  - type: web
+    name: hirelens-api
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    plan: free
+    region: frankfurt
+    healthCheckPath: /api/v1/health
+    autoDeploy: true
+    envVars:
+      # Generated once by Render and then held steady, so tokens survive restarts.
+      - key: SECRET_KEY
+        generateValue: true
+
+      - key: DATABASE_URL
+        fromDatabase:
+          name: hirelens-db
+          property: connectionString
+
+      # Render hands out a postgres:// DSN; app.core.config rewrites it to asyncpg.
+
+      - key: ENVIRONMENT
+        value: production
+      - key: LOG_JSON
+        value: "true"
+
+      # Set these in the dashboard. GOOGLE_API_KEY from
+      # https://aistudio.google.com/app/apikey, and CORS_ORIGINS as the Vercel
+      # URL, e.g. https://cv-analyzer-pro-sigma.vercel.app
+      - key: GOOGLE_API_KEY
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false
+
+databases:
+  - name: hirelens-db
+    plan: free
+    databaseName: hirelens
+    user: hirelens
