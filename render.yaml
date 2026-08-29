@@ -14,7 +14,7 @@ services:
     dockerfilePath: ./backend/Dockerfile
     dockerContext: ./backend
     plan: free
-    region: frankfurt
+    region: singapore
     healthCheckPath: /api/v1/health
     autoDeploy: true
     envVars:
@@ -45,5 +45,8 @@ services:
 databases:
   - name: hirelens-db
     plan: free
+    # Must match the service region, or the internal connection string it hands
+    # to DATABASE_URL is unreachable.
+    region: singapore
     databaseName: hirelens
     user: hirelens
