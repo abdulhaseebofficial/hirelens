@@ -1,27 +1,9 @@
-import {
-  createContext,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type ReactNode,
-} from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 import { setSessionExpiredHandler, tokenStore } from "@/api/client";
 import { auth } from "@/api/endpoints";
+import { AuthContext } from "@/context/auth-context";
 import type { User } from "@/types";
-
-interface AuthContextValue {
-  user: User | null;
-  /** True until the stored token has been checked against the API. */
-  loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, fullName?: string) => Promise<void>;
-  logout: () => Promise<void>;
-}
-
-export const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
