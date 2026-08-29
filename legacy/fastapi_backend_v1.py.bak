@@ -1,0 +1,430 @@
+"""
+CV Analyzer Pro - Backend API
+==============================
+FastAPI backend for AI-powered CV analysis against job descriptions.
+
+Endpoints:
+    POST /analyze/fit-score      - JD <-> CV match score with evidence
+    POST /analyze/snapshot       - Structured candidate profile extraction (JSON)
+    POST /analyze/snapshot/csv   - Structured candidate profile as a CSV download
+    POST /analyze/interview-kit  - Role-specific interview questions
+    POST /analyze/full           - All three combined in one call
+    GET  /health                 - Health check
+
+Built with FastAPI + Google Gemini API
+"""
+
+import os
+import re
+import io
+import csv
+import json
+import time
+import logging
+from typing import Optional
+
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
+from pydantic import BaseModel
+import PyPDF2
+from google import genai
+from google.genai import types
+from dotenv import load_dotenv
+
+# =============================================================================
+# CONFIGURATION
+# =============================================================================
+
+load_dotenv()
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
+logger = logging.getLogger("cv_analyzer")
+
+MODEL_NAME = os.environ.get("GEMINI_MODEL", "models/gemini-flash-lite-latest")
+MAX_FILE_SIZE_MB = 10
+MAX_RETRIES = 3
+ALLOWED_PDF_TYPES = {"application/pdf", "application/x-pdf", "application/octet-stream"}
+
+GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY")
+if not GOOGLE_API_KEY:
+    raise RuntimeError("GOOGLE_API_KEY not found. Set it in your .env file before starting the server.")
+
+try:
+    client = genai.Client(api_key=GOOGLE_API_KEY)
+except Exception as e:
+    raise RuntimeError(f"Failed to initialize Gemini client: {e}") from e
+
+app = FastAPI(
+    title="CV Analyzer Pro API",
+    description="AI-powered CV screening: fit scoring, candidate profile extraction, and interview kit generation.",
+    version="2.0.0",
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# =============================================================================
+# SCHEMAS
+# =============================================================================
+
+class FitScoreResponse(BaseModel):
+    score: Optional[int]
+    verdict_tier: str
+    raw_markdown: str
+
+
+class InterviewKitResponse(BaseModel):
+    raw_markdown: str
+
+
+class SnapshotResponse(BaseModel):
+    parsed: Optional[dict]
+    raw: str
+
+
+class FullAnalysisResponse(BaseModel):
+    fit_score: FitScoreResponse
+    snapshot: SnapshotResponse
+    interview_kit: InterviewKitResponse
+
+
+# =============================================================================
+# CORE HELPERS - PDF extraction, Gemini calls, response parsing
+# =============================================================================
+
+def extract_text_from_pdf(file_bytes: bytes) -> str:
+    try:
+        pdf_reader = PyPDF2.PdfReader(io.BytesIO(file_bytes))
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Could not read PDF: {e}")
+
+    if pdf_reader.is_encrypted:
+        raise HTTPException(status_code=400, detail="This PDF is password-protected. Please upload an unlocked file.")
+
+    text = ""
+    for page in pdf_reader.pages:
+        page_text = page.extract_text()
+        if page_text:
+            text += page_text + "\n"
+
+    text = text.strip()
+    if not text:
+        raise HTTPException(status_code=422, detail="Could not extract any text from this PDF (it may be a scanned image).")
+    return text
+
+
+def call_gemini_api(prompt: str, max_retries: int = MAX_RETRIES) -> str:
+    """Send a prompt to Gemini, retrying with backoff on transient errors."""
+    last_error = None
+    for attempt in range(max_retries):
+        try:
+            contents = [types.Content(role="user", parts=[types.Part.from_text(text=prompt)])]
+            response = client.models.generate_content(model=MODEL_NAME, contents=contents)
+            if not response.text:
+                raise ValueError("Empty response from model")
+            return response.text
+        except Exception as e:
+            last_error = e
+            error_str = str(e).lower()
+            is_transient = any(k in error_str for k in ["429", "rate limit", "resource_exhausted", "unavailable", "timeout", "503"])
+            if is_transient and attempt < max_retries - 1:
+                time.sleep(2 ** attempt)
+                continue
+            break
+    logger.error("Gemini API call failed after retries: %s", last_error)
+    raise HTTPException(status_code=502, detail=f"AI service error: {last_error}")
+
+
+def parse_json_safely(json_string: str) -> Optional[dict]:
+    """Parse JSON from a model response, tolerating code fences or stray text."""
+    cleaned = json_string.strip()
+    cleaned = re.sub(r"^```(?:json)?\s*", "", cleaned)
+    cleaned = re.sub(r"\s*```$", "", cleaned)
+    cleaned = cleaned.strip()
+
+    try:
+        return json.loads(cleaned)
+    except json.JSONDecodeError:
+        pass
+
+    match = re.search(r"\{.*\}", cleaned, re.DOTALL)
+    if match:
+        try:
+            return json.loads(match.group(0))
+        except json.JSONDecodeError:
+            return None
+    return None
+
+
+def extract_fit_score(text: str) -> Optional[int]:
+    match = re.search(r"FIT SCORE:\s*(\d+)", text or "", re.IGNORECASE)
+    return int(match.group(1)) if match else None
+
+
+def score_tier(score: Optional[int]) -> str:
+    if score is None:
+        return "unknown"
+    if score >= 75:
+        return "high"
+    if score >= 50:
+        return "mid"
+    return "low"
+
+
+def build_candidate_csv(data: dict) -> str:
+    buffer = io.StringIO()
+    writer = csv.writer(buffer)
+    writer.writerow(["Name", "Email", "Phone", "Current Role", "Company", "Experience", "Skills"])
+    writer.writerow([
+        data.get("name", ""),
+        data.get("email", ""),
+        data.get("phone", ""),
+        data.get("current_role", ""),
+        data.get("current_company", ""),
+        data.get("experience_years", ""),
+        ", ".join(data.get("skills", []) or []),
+    ])
+    return buffer.getvalue()
+
+
+# =============================================================================
+# PROMPTS
+# =============================================================================
+
+def build_fit_score_prompt(cv_text: str, jd_text: str) -> str:
+    return f"""You are an expert recruiter assistant. Analyze how well this CV matches the job description.
+
+JOB DESCRIPTION:
+{jd_text}
+
+CANDIDATE CV:
+{cv_text}
+
+Provide your analysis in this EXACT markdown format:
+
+## 🎯 FIT SCORE: [number 0-100]/100
+
+### ✅ Matched Requirements
+- **[requirement 1]:** [brief evidence from CV]
+- **[requirement 2]:** [brief evidence from CV]
+- **[requirement 3]:** [brief evidence from CV]
+- **[requirement 4]:** [brief evidence from CV]
+- **[requirement 5]:** [brief evidence from CV]
+
+### ⚠️ Missing/Weak Areas
+- **[gap 1]:** [what's missing or weak]
+- **[gap 2]:** [what's missing or weak]
+
+### 📋 Verdict
+**[Strong Fit / Moderate Fit / Weak Fit]:** [One sentence recommendation]
+
+Use proper markdown with headers (##, ###), bold (**text**), and bullet points (-). Keep it well-structured and readable."""
+
+
+def build_snapshot_prompt(cv_text: str) -> str:
+    return f"""You are a CV parsing expert. Extract key information from this CV into a structured format.
+
+CV TEXT:
+{cv_text}
+
+Return ONLY valid JSON (no markdown, no code blocks, no extra text). Use this exact structure:
+{{
+    "name": "Full Name",
+    "email": "email@example.com",
+    "phone": "phone number or null",
+    "linkedin": "LinkedIn URL or null",
+    "summary": "2-3 sentence professional summary",
+    "experience_years": "estimated total years",
+    "current_role": "most recent job title",
+    "current_company": "most recent company",
+    "skills": ["skill1", "skill2", "skill3"],
+    "tools_technologies": ["tool1", "tool2"],
+    "education": [
+        {{"degree": "Degree Name", "institution": "University", "year": "Year"}}
+    ],
+    "key_achievements": ["achievement 1", "achievement 2"],
+    "languages": ["English", "Other"]
+}}
+
+If any field is not found in the CV, use null for single values or empty array [] for lists."""
+
+
+def build_interview_kit_prompt(cv_text: str, jd_text: str) -> str:
+    return f"""You are a senior hiring manager. Create an interview kit for this candidate.
+
+JOB DESCRIPTION:
+{jd_text}
+
+CANDIDATE CV:
+{cv_text}
+
+Generate an interview kit in this EXACT markdown format:
+
+## 🎤 Role-Specific Questions
+
+### Question 1: Experience
+**Q:** [Question about their relevant experience]
+
+✅ **Strong Answer Should Include:** [What a good answer includes]
+
+---
+
+### Question 2: Technical Skills
+**Q:** [Technical/skill-based question from JD requirements]
+
+✅ **Strong Answer Should Include:** [What a good answer includes]
+
+---
+
+### Question 3: Project Deep-Dive
+**Q:** [Question about a specific project from their CV]
+
+✅ **Strong Answer Should Include:** [What a good answer includes]
+
+---
+
+### Question 4: Behavioral
+**Q:** [Behavioral question relevant to the role]
+
+✅ **Strong Answer Should Include:** [What a good answer includes]
+
+---
+
+### Question 5: Problem-Solving
+**Q:** [Problem-solving question for the role]
+
+✅ **Strong Answer Should Include:** [What a good answer includes]
+
+---
+
+### Question 6: Culture Fit
+**Q:** [Culture/teamwork question]
+
+✅ **Strong Answer Should Include:** [What a good answer includes]
+
+---
+
+## 🔍 Clarification Questions (Address Gaps/Concerns)
+
+### Clarification 1
+**Q:** [Question about a gap, unclear period, or missing requirement]
+
+🎯 **Why Ask This:** [What you're trying to clarify]
+
+---
+
+### Clarification 2
+**Q:** [Question about a potential risk area]
+
+🎯 **Why Ask This:** [What you're trying to clarify]
+
+Use proper markdown formatting with headers, bold text, and horizontal rules (---) for clear separation."""
+
+
+# =============================================================================
+# SHARED REQUEST VALIDATION
+# =============================================================================
+
+async def read_and_validate_cv(cv: UploadFile) -> str:
+    if cv.content_type not in ALLOWED_PDF_TYPES and not cv.filename.lower().endswith(".pdf"):
+        raise HTTPException(status_code=400, detail="Only PDF files are supported.")
+
+    file_bytes = await cv.read()
+    if not file_bytes:
+        raise HTTPException(status_code=400, detail="Uploaded file is empty.")
+    if len(file_bytes) > MAX_FILE_SIZE_MB * 1024 * 1024:
+        raise HTTPException(status_code=413, detail=f"File too large. Max size is {MAX_FILE_SIZE_MB}MB.")
+
+    return extract_text_from_pdf(file_bytes)
+
+
+def validate_jd(job_description: str) -> str:
+    jd_text = (job_description or "").strip()
+    if not jd_text:
+        raise HTTPException(status_code=400, detail="Job description is required.")
+    return jd_text
+
+
+# =============================================================================
+# ROUTES
+# =============================================================================
+
+@app.get("/")
+def root():
+    return {
+        "message": "CV Analyzer Pro API is running.",
+        "docs": "/docs",
+        "health": "/health",
+    }
+
+
+@app.get("/health")
+def health_check():
+    return {"status": "ok", "model": MODEL_NAME}
+
+
+@app.post("/analyze/fit-score", response_model=FitScoreResponse)
+async def analyze_fit_score(cv: UploadFile = File(...), job_description: str = Form(...)):
+    cv_text = await read_and_validate_cv(cv)
+    jd_text = validate_jd(job_description)
+
+    raw = call_gemini_api(build_fit_score_prompt(cv_text, jd_text))
+    score = extract_fit_score(raw)
+    return FitScoreResponse(score=score, verdict_tier=score_tier(score), raw_markdown=raw)
+
+
+@app.post("/analyze/snapshot", response_model=SnapshotResponse)
+async def analyze_snapshot(cv: UploadFile = File(...)):
+    cv_text = await read_and_validate_cv(cv)
+    raw = call_gemini_api(build_snapshot_prompt(cv_text))
+    return SnapshotResponse(parsed=parse_json_safely(raw), raw=raw)
+
+
+@app.post("/analyze/snapshot/csv")
+async def analyze_snapshot_csv(cv: UploadFile = File(...)):
+    cv_text = await read_and_validate_cv(cv)
+    raw = call_gemini_api(build_snapshot_prompt(cv_text))
+    data = parse_json_safely(raw)
+    if data is None:
+        raise HTTPException(status_code=502, detail="Could not parse structured data from the AI response.")
+
+    csv_data = build_candidate_csv(data)
+    return StreamingResponse(
+        iter([csv_data]),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=candidate_profile.csv"},
+    )
+
+
+@app.post("/analyze/interview-kit", response_model=InterviewKitResponse)
+async def analyze_interview_kit(cv: UploadFile = File(...), job_description: str = Form(...)):
+    cv_text = await read_and_validate_cv(cv)
+    jd_text = validate_jd(job_description)
+
+    raw = call_gemini_api(build_interview_kit_prompt(cv_text, jd_text))
+    return InterviewKitResponse(raw_markdown=raw)
+
+
+@app.post("/analyze/full", response_model=FullAnalysisResponse)
+async def analyze_full(cv: UploadFile = File(...), job_description: str = Form(...)):
+    cv_text = await read_and_validate_cv(cv)
+    jd_text = validate_jd(job_description)
+
+    fit_raw = call_gemini_api(build_fit_score_prompt(cv_text, jd_text))
+    score = extract_fit_score(fit_raw)
+
+    snapshot_raw = call_gemini_api(build_snapshot_prompt(cv_text))
+    snapshot_parsed = parse_json_safely(snapshot_raw)
+
+    kit_raw = call_gemini_api(build_interview_kit_prompt(cv_text, jd_text))
+
+    return FullAnalysisResponse(
+        fit_score=FitScoreResponse(score=score, verdict_tier=score_tier(score), raw_markdown=fit_raw),
+        snapshot=SnapshotResponse(parsed=snapshot_parsed, raw=snapshot_raw),
+        interview_kit=InterviewKitResponse(raw_markdown=kit_raw),
+    )

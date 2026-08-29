@@ -1,0 +1,29 @@
+[project]
+name = "hirelens-api"
+version = "2.0.0"
+description = "Recruiter CV screening API — fit scoring, candidate profiles, interview kits."
+requires-python = ">=3.11"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+exclude = ["alembic/versions"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "C4", "SIM"]
+ignore = [
+    "B008", # FastAPI's Depends()/File() defaults are the documented pattern.
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Prompt text is written for the model, not for an 100-column terminal.
+"app/services/prompts.py" = ["E501"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["app"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+filterwarnings = ["ignore::DeprecationWarning"]

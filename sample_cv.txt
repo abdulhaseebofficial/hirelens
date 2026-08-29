@@ -1,0 +1,69 @@
+# Sample CV for Testing CV Analyzer Pro
+
+This is a sample text file representing CV content for testing purposes. In actual usage, upload a PDF CV.
+
+---
+
+## John Doe
+**Email**: john.doe@email.com  
+**Phone**: +1 (555) 123-4567  
+**LinkedIn**: linkedin.com/in/johndoe  
+**Location**: San Francisco, CA
+
+### Professional Summary
+Experienced Software Engineer with 5+ years of expertise in full-stack development, cloud architecture, and team leadership. Proven track record of delivering scalable web applications using Python, React, and AWS. Passionate about clean code, agile methodologies, and mentoring junior developers.
+
+### Work Experience
+
+**Senior Software Engineer** | Tech Innovations Inc. | Jan 2021 - Present
+- Led development of microservices architecture serving 2M+ daily users
+- Reduced API response time by 40% through database optimization
+- Mentored team of 4 junior developers, improving code quality by 30%
+- Technologies: Python, Django, React, PostgreSQL, AWS, Docker
+
+**Software Engineer** | StartupXYZ | Jun 2019 - Dec 2020
+- Built RESTful APIs for mobile and web applications
+- Implemented CI/CD pipelines reducing deployment time by 60%
+- Collaborated with product team on feature prioritization
+- Technologies: Node.js, Express, MongoDB, React, Jenkins
+
+**Junior Developer** | Digital Solutions Ltd. | Aug 2018 - May 2019
+- Developed responsive web applications using HTML, CSS, JavaScript
+- Fixed bugs and improved application performance
+- Participated in code reviews and agile ceremonies
+- Technologies: JavaScript, jQuery, Bootstrap, MySQL
+
+### Education
+
+**Bachelor of Science in Computer Science**  
+University of California, Berkeley | 2014 - 2018  
+GPA: 3.7/4.0
+
+### Technical Skills
+
+**Programming Languages**: Python, JavaScript, TypeScript, Java, SQL  
+**Frameworks**: Django, React, Node.js, Express, Flask  
+**Databases**: PostgreSQL, MongoDB, MySQL, Redis  
+**Cloud & DevOps**: AWS (EC2, S3, Lambda), Docker, Kubernetes, Jenkins, GitHub Actions  
+**Tools**: Git, JIRA, Confluence, VS Code, Postman
+
+### Key Achievements
+
+- Architected and deployed scalable microservices handling 10K requests/second
+- Reduced infrastructure costs by 25% through cloud optimization
+- Received "Outstanding Performer" award in 2022
+- Published technical blog posts with 50K+ views
+
+### Certifications
+
+- AWS Certified Solutions Architect - Associate (2022)
+- Certified Scrum Master (CSM) (2021)
+
+### Languages
+
+- English (Native)
+- Spanish (Professional working proficiency)
+
+---
+
+**Note**: This is a sample CV for testing purposes. Replace with actual PDF CV for real analysis.

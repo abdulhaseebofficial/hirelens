@@ -1,0 +1,157 @@
+@import "tailwindcss";
+
+/* ---------------------------------------------------------------------------
+   Design tokens — the HireLens palette, carried over from the Streamlit app.
+   Defined via @theme so they are available as Tailwind utilities
+   (bg-paper, text-ink, border-line, ...).
+--------------------------------------------------------------------------- */
+@theme {
+  --color-paper: #262624;
+  --color-paper-raised: #30302e;
+  --color-paper-sunken: #1e1e1c;
+  --color-ink: #f0eee6;
+  --color-ink-muted: #a8a6a0;
+  --color-ink-faint: #7a7873;
+  --color-coral: #cc785c;
+  --color-coral-light: #e0916f;
+  --color-coral-dark: #a85c43;
+  --color-line: rgba(240, 238, 230, 0.14);
+  --color-line-strong: rgba(240, 238, 230, 0.28);
+
+  --color-fit-high: #5c7a50;
+  --color-fit-high-light: #7a9a6d;
+  --color-fit-mid: #cc785c;
+  --color-fit-mid-light: #e0916f;
+  --color-fit-low: #9a4234;
+  --color-fit-low-light: #c1594a;
+
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-serif: "Source Serif 4", Georgia, "Times New Roman", serif;
+
+  --radius-card: 16px;
+}
+
+@layer base {
+  html {
+    color-scheme: dark;
+  }
+
+  body {
+    @apply bg-paper text-ink font-sans antialiased;
+    margin: 0;
+    min-height: 100vh;
+  }
+
+  h1,
+  h2,
+  h3 {
+    @apply font-serif font-semibold text-ink;
+  }
+
+  /* Visible focus for keyboard users on every interactive element. */
+  :focus-visible {
+    outline: 2px solid var(--color-coral);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background: rgba(204, 120, 92, 0.35);
+  }
+}
+
+@layer components {
+  .card {
+    @apply bg-paper-raised border border-line rounded-2xl;
+  }
+
+  .eyebrow {
+    @apply text-[0.72rem] font-bold uppercase tracking-[0.12em] text-coral-light;
+  }
+
+  .section-label {
+    @apply text-[0.72rem] font-bold uppercase tracking-[0.08em] text-ink-muted;
+  }
+
+  .input {
+    @apply w-full rounded-xl border border-line bg-paper-sunken px-3.5 py-2.5 text-ink
+      placeholder:text-ink-faint transition-colors;
+  }
+
+  .input:focus {
+    @apply border-coral outline-none ring-3 ring-coral/20;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm
+      font-semibold transition-all disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .btn-primary {
+    @apply btn bg-coral text-white shadow-[0_2px_6px_rgba(204,120,92,0.35)];
+  }
+
+  .btn-primary:hover:not(:disabled) {
+    @apply bg-coral-light shadow-[0_4px_10px_rgba(204,120,92,0.45)];
+  }
+
+  .btn-secondary {
+    @apply btn border border-line bg-transparent text-ink;
+  }
+
+  .btn-secondary:hover:not(:disabled) {
+    @apply border-coral text-coral-light;
+  }
+
+  .btn-ghost {
+    @apply btn bg-transparent text-ink-muted;
+  }
+
+  .btn-ghost:hover:not(:disabled) {
+    @apply text-ink;
+  }
+
+  .pill {
+    @apply inline-block rounded-full border border-coral/25 bg-coral/15 px-3 py-1
+      text-[0.8rem] font-semibold text-coral-light;
+  }
+}
+
+/* Rendered model output — react-markdown emits unstyled HTML, so the typography
+   rules live here rather than being repeated as className props. */
+.markdown {
+  @apply text-[0.94rem] leading-relaxed text-ink;
+}
+.markdown h2 {
+  @apply mt-6 mb-3 font-serif text-xl font-semibold first:mt-0;
+}
+.markdown h3 {
+  @apply mt-5 mb-2 font-serif text-base font-semibold text-coral-light;
+}
+.markdown p {
+  @apply my-3;
+}
+.markdown ul {
+  @apply my-3 list-disc space-y-1.5 pl-5;
+}
+.markdown ol {
+  @apply my-3 list-decimal space-y-1.5 pl-5;
+}
+.markdown strong {
+  @apply font-semibold text-ink;
+}
+.markdown hr {
+  @apply my-5 border-line;
+}
+.markdown a {
+  @apply text-coral-light underline underline-offset-2;
+}
+.markdown code {
+  @apply rounded bg-paper-sunken px-1.5 py-0.5 text-[0.85em];
+}
+.markdown table {
+  @apply my-4 w-full border-collapse text-left text-sm;
+}
+.markdown th,
+.markdown td {
+  @apply border border-line px-3 py-2;
+}
