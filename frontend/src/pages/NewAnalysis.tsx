@@ -67,18 +67,24 @@ export function NewAnalysis() {
       )}
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <section className="space-y-3">
+        {/* Both columns are flex columns so the upload zone can stretch to the
+            height of the job-description box beside it. Left as blocks, the
+            shorter column left a large hole under the drop target and pushed
+            Step 3 far down the page. */}
+        <section className="flex flex-col gap-3">
           <h2 className="section-label">Step 1 · Candidate CVs</h2>
-          <UploadZone
-            files={files}
-            onChange={setFiles}
-            maxFiles={config?.max_batch_size ?? 15}
-            maxFileSizeMb={config?.max_file_size_mb ?? 10}
-            disabled={submitting}
-          />
+          <div className="flex flex-1 flex-col">
+            <UploadZone
+              files={files}
+              onChange={setFiles}
+              maxFiles={config?.max_batch_size ?? 15}
+              maxFileSizeMb={config?.max_file_size_mb ?? 10}
+              disabled={submitting}
+            />
+          </div>
         </section>
 
-        <section className="space-y-3">
+        <section className="flex flex-col gap-3">
           <h2 className="section-label">Step 2 · Job description</h2>
           <textarea
             value={jobDescription}

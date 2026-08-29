@@ -66,7 +66,7 @@ export function UploadZone({
   };
 
   return (
-    <div className="space-y-3">
+    <div className="flex h-full flex-col gap-3">
       <label
         htmlFor={inputId}
         onDragOver={(event) => {
@@ -79,8 +79,8 @@ export function UploadZone({
           setDragging(false);
           if (!disabled) addFiles(event.dataTransfer.files);
         }}
-        className={`flex cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl
-          border-[1.5px] border-dashed px-6 py-10 text-center transition-colors
+        className={`flex min-h-[13rem] flex-1 cursor-pointer flex-col items-center justify-center gap-2
+          rounded-2xl border-[1.5px] border-dashed px-6 py-10 text-center transition-colors
           ${dragging ? "border-coral bg-coral/10" : "border-line bg-paper-raised"}
           ${disabled ? "cursor-not-allowed opacity-50" : "hover:border-coral/60"}`}
       >

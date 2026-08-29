@@ -2,6 +2,13 @@ import { NavLink, Outlet, useNavigate } from "react-router-dom";
 
 import { useAuth } from "@/hooks/useAuth";
 
+/** Who built this, and where feedback goes. */
+const DEVELOPER = {
+  name: "Abdul Haseeb",
+  linkedin: "https://www.linkedin.com/in/abdulhaseebkashmiri/",
+  email: "abdul.haseeb.kashmiri@outlook.com",
+};
+
 function navClass({ isActive }: { isActive: boolean }) {
   return `rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${
     isActive ? "bg-coral/15 text-coral-light" : "text-ink-muted hover:text-ink"
@@ -53,10 +60,30 @@ export function Layout() {
       </main>
 
       <footer className="border-t border-line px-5 py-5">
-        <div className="mx-auto flex w-full max-w-6xl flex-wrap gap-x-3 gap-y-1 text-xs text-ink-faint">
+        <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center gap-x-3 gap-y-2 text-xs text-ink-faint">
           <span>HireLens</span>
           <span aria-hidden="true">·</span>
           <span>CVs are processed for analysis and stored against your account only.</span>
+
+          {/* Somewhere to send a bug or an idea. On every page, because the page
+              you need to report is rarely the one you can get back to. */}
+          <span className="ml-auto flex flex-wrap items-center gap-x-3 gap-y-2">
+            <span>Feedback? Reach {DEVELOPER.name}:</span>
+            <a
+              href={DEVELOPER.linkedin}
+              target="_blank"
+              rel="noreferrer noopener"
+              className="font-semibold text-ink-muted transition-colors hover:text-coral"
+            >
+              LinkedIn
+            </a>
+            <a
+              href={`mailto:${DEVELOPER.email}?subject=HireLens%20feedback`}
+              className="font-semibold text-ink-muted transition-colors hover:text-coral"
+            >
+              Email
+            </a>
+          </span>
         </div>
       </footer>
     </div>
