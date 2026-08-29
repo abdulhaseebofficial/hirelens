@@ -1,5 +1,9 @@
 # 🎊 CV Analyzer Pro - Repository Summary
 
+> ⚠️ **Outdated.** This document describes the original Streamlit prototype, which now lives in
+> [`legacy/`](legacy/). The current project is a FastAPI backend + React frontend — see
+> [README.md](README.md) for setup and usage.
+
 ## ✅ Complete GitHub Repository Created!
 
 Aapka CV Analyzer Pro ka complete, professional GitHub repository tayar hai!

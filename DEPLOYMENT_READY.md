@@ -1,5 +1,9 @@
 # 🎯 Repository Ready for GitHub!
 
+> ⚠️ **Outdated.** This document describes the original Streamlit prototype, which now lives in
+> [`legacy/`](legacy/). The current project is a FastAPI backend + React frontend — see
+> [README.md](README.md) for setup and usage.
+
 Your CV Analyzer Pro repository is now complete and ready to be pushed to GitHub.
 
 ## 📦 What's Included

@@ -1,5 +1,9 @@
 # ⚡ Quick Start Guide - CV Analyzer Pro
 
+> ⚠️ **Outdated.** This document describes the original Streamlit prototype, which now lives in
+> [`legacy/`](legacy/). The current project is a FastAPI backend + React frontend — see
+> [README.md](README.md) for setup and usage.
+
 Get started in 5 minutes or less!
 
 ## 🎯 Prerequisites Checklist

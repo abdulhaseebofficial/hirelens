@@ -1,3 +1,6 @@
+# Dependencies for the legacy Streamlit prototype in legacy/ only.
+# The current app installs from backend/requirements.txt and frontend/package.json.
+
 streamlit
 PyPDF2
 google-genai

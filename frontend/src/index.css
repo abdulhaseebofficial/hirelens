@@ -59,6 +59,11 @@
   }
 }
 
+@utility btn {
+  @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm
+    font-semibold transition-all disabled:cursor-not-allowed disabled:opacity-50;
+}
+
 @layer components {
   .card {
     @apply bg-paper-raised border border-line rounded-2xl;
@@ -79,11 +84,6 @@
 
   .input:focus {
     @apply border-coral outline-none ring-3 ring-coral/20;
-  }
-
-  .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm
-      font-semibold transition-all disabled:cursor-not-allowed disabled:opacity-50;
   }
 
   .btn-primary {

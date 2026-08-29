@@ -1,5 +1,9 @@
 # 📚 CV Analyzer Pro - Documentation
 
+> ⚠️ **Outdated.** This document describes the original Streamlit prototype, which now lives in
+> [`legacy/`](legacy/). The current project is a FastAPI backend + React frontend — see
+> [README.md](README.md) for setup and usage.
+
 ## Overview
 
 CV Analyzer Pro is an AI-powered recruitment tool that helps hiring managers and recruiters efficiently screen candidates by analyzing CVs against job descriptions.
