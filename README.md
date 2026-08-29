@@ -12,6 +12,45 @@ interview kits.
 The project is a FastAPI backend (`HireLens API`) paired with a React + Vite recruiter console.
 The original Streamlit prototype is kept under [`legacy/`](legacy/) for reference.
 
+## 📸 Screenshots
+
+> The candidates below are fictional demo content, used to show what the interface looks like
+> with a completed batch. They are not model output.
+
+### Ranking and fit score
+
+Every CV in a batch is scored 0-100 and ranked, with the evidence behind the score laid out
+against the job description.
+
+![Ranked candidates with the fit score report open](docs/screenshots/04-fit-score.png)
+
+### Candidate snapshot
+
+The structured profile pulled out of the CV — contact details, current role, skills, education
+and achievements — exportable as JSON or CSV.
+
+![Structured candidate profile extracted from the CV](docs/screenshots/05-candidate-profile.png)
+
+### Interview kit
+
+Role-specific questions generated on demand, each with what a strong answer covers, plus red
+flags worth probing.
+
+![Generated interview kit with questions and rubrics](docs/screenshots/06-interview-kit.png)
+
+### Starting an analysis
+
+![Upload form for CVs and the job description](docs/screenshots/03-new-analysis.png)
+
+<details>
+<summary>Sign in and screening history</summary>
+
+![Sign in screen](docs/screenshots/01-login.png)
+
+![List of previous analyses](docs/screenshots/02-dashboard.png)
+
+</details>
+
 ## 🌟 Features
 
 ### 📊 JD ↔ CV Fit Score
@@ -91,9 +130,15 @@ port 8000, so the browser sees a same-origin API and CORS never comes up locally
 
 ### 4. Use it
 
-Register an account in the UI, create an analysis, upload CVs (PDF or text) with a job
-description, and review the ranked results. `sample_cv.txt` and `sample_jd.txt` in the repo root
-are there to try it with.
+Register an account in the UI, create an analysis, upload one or more CVs, and review the ranked
+results.
+
+**CVs must be PDFs.** Text is extracted with PyPDF2, so an upload that is not a PDF — or a scanned,
+image-only PDF with no text layer — is rejected with an explanatory message instead of being
+analysed. The job description is pasted as text rather than uploaded, and must be at least 50
+characters.
+
+To try it: upload `sample_cv.pdf` and paste the contents of `sample_jd.txt` (both in the repo root).
 
 ## 📡 API Overview
 
@@ -169,6 +214,7 @@ cv-analyzer-pro/
 │       ├── context/hooks/   # auth + analysis state
 │       └── pages/           # dashboard, analysis, reports, auth
 ├── legacy/                  # original Streamlit prototype
+├── docs/screenshots/        # images used by this README
 └── .github/workflows/ci.yml
 ```
 
