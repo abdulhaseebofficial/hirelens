@@ -208,6 +208,10 @@ different places.
 [`vercel.json`](vercel.json) at the repo root already points Vercel at `frontend/`, builds it,
 and adds the SPA rewrite so `/login` and `/analyses/:id` resolve on a hard refresh.
 
+The prototype's `requirements.txt` and `runtime.txt` live in `legacy/` rather than the repo root,
+so nothing at the top level looks like a Python app. With them at the root, Vercel detected the
+repo as Python and failed the build looking for an ASGI entrypoint.
+
 Set one environment variable in the Vercel project **before** the first build:
 
 | Variable | Value |
@@ -277,7 +281,7 @@ cv-analyzer-pro/
 │       ├── components/      # UI building blocks
 │       ├── context/hooks/   # auth + analysis state
 │       └── pages/           # dashboard, analysis, reports, auth
-├── legacy/                  # original Streamlit prototype
+├── legacy/                  # original Streamlit prototype and its requirements/runtime
 ├── docs/screenshots/        # images used by this README
 ├── vercel.json              # builds the frontend on Vercel
 └── .github/workflows/ci.yml

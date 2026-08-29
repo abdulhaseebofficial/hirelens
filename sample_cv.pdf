@@ -1,0 +1,66 @@
+%PDF-1.4
+1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj
+2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj
+3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 612 792]/Contents 4 0 R/Resources<</Font<</F1 5 0 R>>>>>>endobj
+4 0 obj<</Length 2801>>stream
+BT /F1 11 Tf 54 740 Td 14 TL
+(# Sample CV for Testing CV Analyzer Pro) Tj T*
+(This is a sample text file representing CV content for testing purposes. In actual usage, upload a PDF CV.) Tj T*
+(---) Tj T*
+(## John Doe) Tj T*
+(**Email**: john.doe@email.com) Tj T*
+(**Phone**: +1 \(555\) 123-4567) Tj T*
+(**LinkedIn**: linkedin.com/in/johndoe) Tj T*
+(**Location**: San Francisco, CA) Tj T*
+(### Professional Summary) Tj T*
+(Experienced Software Engineer with 5+ years of expertise in full-stack development, cloud architecture, and team leadership. Proven track record of delivering scalable web applications using Python, React, and AWS. Passionate about clean code, agile methodologies, and mentoring junior developers.) Tj T*
+(### Work Experience) Tj T*
+(**Senior Software Engineer** | Tech Innovations Inc. | Jan 2021 - Present) Tj T*
+(- Led development of microservices architecture serving 2M+ daily users) Tj T*
+(- Reduced API response time by 40% through database optimization) Tj T*
+(- Mentored team of 4 junior developers, improving code quality by 30%) Tj T*
+(- Technologies: Python, Django, React, PostgreSQL, AWS, Docker) Tj T*
+(**Software Engineer** | StartupXYZ | Jun 2019 - Dec 2020) Tj T*
+(- Built RESTful APIs for mobile and web applications) Tj T*
+(- Implemented CI/CD pipelines reducing deployment time by 60%) Tj T*
+(- Collaborated with product team on feature prioritization) Tj T*
+(- Technologies: Node.js, Express, MongoDB, React, Jenkins) Tj T*
+(**Junior Developer** | Digital Solutions Ltd. | Aug 2018 - May 2019) Tj T*
+(- Developed responsive web applications using HTML, CSS, JavaScript) Tj T*
+(- Fixed bugs and improved application performance) Tj T*
+(- Participated in code reviews and agile ceremonies) Tj T*
+(- Technologies: JavaScript, jQuery, Bootstrap, MySQL) Tj T*
+(### Education) Tj T*
+(**Bachelor of Science in Computer Science**) Tj T*
+(University of California, Berkeley | 2014 - 2018) Tj T*
+(GPA: 3.7/4.0) Tj T*
+(### Technical Skills) Tj T*
+(**Programming Languages**: Python, JavaScript, TypeScript, Java, SQL) Tj T*
+(**Frameworks**: Django, React, Node.js, Express, Flask) Tj T*
+(**Databases**: PostgreSQL, MongoDB, MySQL, Redis) Tj T*
+(**Cloud & DevOps**: AWS \(EC2, S3, Lambda\), Docker, Kubernetes, Jenkins, GitHub Actions) Tj T*
+(**Tools**: Git, JIRA, Confluence, VS Code, Postman) Tj T*
+(### Key Achievements) Tj T*
+(- Architected and deployed scalable microservices handling 10K requests/second) Tj T*
+(- Reduced infrastructure costs by 25% through cloud optimization) Tj T*
+(- Received "Outstanding Performer" award in 2022) Tj T*
+(- Published technical blog posts with 50K+ views) Tj T*
+(### Certifications) Tj T*
+(- AWS Certified Solutions Architect - Associate \(2022\)) Tj T*
+(- Certified Scrum Master \(CSM\) \(2021\)) Tj T*
+(### Languages) Tj T*
+ET
+endstreamendobj
+5 0 obj<</Type/Font/Subtype/Type1/BaseFont/Helvetica>>endobj
+xref
+0 6
+0000000000 65535 f 
+0000000009 00000 n 
+0000000052 00000 n 
+0000000101 00000 n 
+0000000211 00000 n 
+0000003059 00000 n 
+trailer<</Size 6/Root 1 0 R>>
+startxref
+3120
+%%EOF

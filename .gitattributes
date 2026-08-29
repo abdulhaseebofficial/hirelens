@@ -1,0 +1,10 @@
+# Keep binary assets byte-exact. The sample PDF is mostly ASCII, so git guesses
+# "text" and would rewrite its line endings, corrupting the xref byte offsets.
+*.pdf   binary
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.ico   binary
+*.woff  binary
+*.woff2 binary
