@@ -12,6 +12,21 @@ from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 PLACEHOLDER_HINTS = ("your_api_key", "your-api-key", "placeholder", "changeme", "xxxx")
 
+# libpq understands these; asyncpg does not, and SQLAlchemy passes every query
+# parameter straight through to asyncpg.connect().
+LIBPQ_ONLY_PARAMS = frozenset(
+    {
+        "sslmode",
+        "channel_binding",
+        "sslrootcert",
+        "sslcert",
+        "sslkey",
+        "gssencmode",
+        "target_session_attrs",
+        "connect_timeout",
+    }
+)
+
 
 class Settings(BaseSettings):
     """Runtime configuration for the HireLens API."""
@@ -92,16 +107,34 @@ class Settings(BaseSettings):
     @field_validator("database_url", mode="after")
     @classmethod
     def _use_async_driver(cls, value: str) -> str:
-        """Managed hosts hand out sync DSNs; SQLAlchemy's async engine needs a driver.
+        """Turn a managed host's DSN into one asyncpg can actually open.
 
-        Render, Railway and Heroku all inject `postgres://` or `postgresql://`,
-        which create_async_engine rejects. Rewrite those to asyncpg rather than
-        making every deployment remember to.
+        Render, Railway, Heroku and Neon all inject a sync `postgres://` or
+        `postgresql://` URL, which create_async_engine rejects outright. They
+        also append libpq-only query parameters — Neon sends
+        `?sslmode=require&channel_binding=require` — and SQLAlchemy forwards
+        every query parameter to asyncpg.connect(), which does not accept them:
+
+            TypeError: connect() got an unexpected keyword argument 'channel_binding'
+
+        So rewrite the scheme and drop those parameters. TLS still happens:
+        asyncpg negotiates it, and these providers require it server-side.
         """
         cleaned = value.strip()
         for prefix in ("postgres://", "postgresql://"):
             if cleaned.startswith(prefix):
-                return "postgresql+asyncpg://" + cleaned[len(prefix) :]
+                cleaned = "postgresql+asyncpg://" + cleaned[len(prefix) :]
+                break
+
+        if "+asyncpg://" in cleaned and "?" in cleaned:
+            base, _, query = cleaned.partition("?")
+            kept = [
+                part
+                for part in query.split("&")
+                if part and part.split("=", 1)[0].lower() not in LIBPQ_ONLY_PARAMS
+            ]
+            cleaned = f"{base}?{'&'.join(kept)}" if kept else base
+
         return cleaned
 
     @field_validator("google_api_key", mode="after")

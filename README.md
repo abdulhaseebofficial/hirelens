@@ -197,11 +197,14 @@ CI runs exactly these steps on every push and pull request — see
 The frontend is a static bundle and the backend is a long-running process, so they deploy to
 different places.
 
-> **The backend does not belong on a serverless platform.** `POST /analyses` returns `202` and
-> finishes the work in a FastAPI background task, which only runs *after* the response is sent —
-> a serverless function is frozen at that point, so analyses would never leave `pending`. The
-> default SQLite database has the same problem: serverless filesystems are ephemeral. Deploy the
-> API to a host that keeps a process alive.
+**Live:** [cv-analyzer-pro-sigma.vercel.app](https://cv-analyzer-pro-sigma.vercel.app), with the
+API at [hirelens-api.vercel.app](https://hirelens-api.vercel.app) and Neon Postgres behind it.
+
+> The API runs as a Vercel Python function. Vercel does finish the FastAPI background task that
+> `POST /analyses` schedules — a single-CV batch completes end to end — but a serverless function
+> still has a wall-clock limit, so a large batch can be cut off mid-run. A host that keeps a
+> process alive (the Dockerfile and blueprint below) has no such ceiling. SQLite is not an option
+> either way: serverless filesystems are ephemeral, hence Postgres.
 
 ### Frontend on Vercel
 
@@ -215,7 +218,7 @@ The prototype's `requirements.txt` and `runtime.txt` live in `legacy/` rather th
 so nothing at the top level looks like a Python app. With them at the root, Vercel detected the
 repo as Python and failed the build looking for an ASGI entrypoint.
 
-Set one environment variable in the Vercel project **before** the first build:
+Set one environment variable in the frontend project **before** the first build:
 
 | Variable | Value |
 |---|---|
@@ -224,6 +227,21 @@ Set one environment variable in the Vercel project **before** the first build:
 Vite inlines `import.meta.env` values at build time, so changing this variable requires a
 redeploy — it is not read at runtime. Without it the app falls back to a relative `/api/v1`,
 which on Vercel resolves to the static site itself and 404s.
+
+### Backend as a Vercel function
+
+`backend/pyproject.toml` declares the ASGI entrypoint Vercel needs:
+
+```toml
+[tool.vercel]
+entrypoint = "app.main:app"
+```
+
+Deploy `backend/` as its own Vercel project and set `DATABASE_URL`, `SECRET_KEY`,
+`GOOGLE_API_KEY` and `CORS_ORIGINS` on it. Vercel installs from `pyproject.toml`, not
+`requirements.txt`, which is why the dependency list lives in both — `tests/test_packaging.py`
+fails if they drift apart. Migrations do not run on deploy; point `DATABASE_URL` at the database
+and run `alembic upgrade head` once from a machine that can reach it.
 
 ### Backend on a container host
 

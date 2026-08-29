@@ -22,6 +22,11 @@ if _is_sqlite:
         _engine_kwargs["poolclass"] = StaticPool
 else:
     _engine_kwargs.update(pool_size=10, max_overflow=20, pool_pre_ping=True)
+    if "+asyncpg" in settings.database_url:
+        # Managed Postgres is usually reached through a PgBouncer endpoint in
+        # transaction mode, where a prepared statement cached on one connection
+        # is invalid on the next. Disabling the cache keeps that safe.
+        _engine_kwargs["connect_args"] = {"statement_cache_size": 0}
 
 engine = create_async_engine(settings.database_url, **_engine_kwargs)
 
