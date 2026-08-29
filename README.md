@@ -206,7 +206,10 @@ different places.
 ### Frontend on Vercel
 
 [`vercel.json`](vercel.json) at the repo root already points Vercel at `frontend/`, builds it,
-and adds the SPA rewrite so `/login` and `/analyses/:id` resolve on a hard refresh.
+and adds the SPA rewrite so `/login` and `/analyses/:id` resolve on a hard refresh. The rewrite
+deliberately excludes `/api/*`: catching those too would answer an unconfigured API call with
+`index.html` and a `200`, and the client would fail on `response.json()` with a parse error rather
+than a readable one.
 
 The prototype's `requirements.txt` and `runtime.txt` live in `legacy/` rather than the repo root,
 so nothing at the top level looks like a Python app. With them at the root, Vercel detected the
