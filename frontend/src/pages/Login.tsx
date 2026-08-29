@@ -99,23 +99,72 @@ export function AuthShell({
   footer: React.ReactNode;
 }) {
   return (
-    <div className="flex min-h-screen items-center justify-center px-5 py-12">
-      <div className="w-full max-w-md space-y-6">
-        <div className="space-y-1.5 text-center">
-          <div className="mb-4 flex items-center justify-center gap-2.5">
-            <span className="grid h-10 w-10 place-items-center rounded-xl bg-coral font-serif text-xl font-bold text-white">
-              H
-            </span>
+    <div className="flex min-h-screen flex-col lg:flex-row">
+      {/* Form. Full width on small screens, left half once the brand panel appears. */}
+      <div className="flex flex-1 items-center justify-center px-5 py-12">
+        <div className="w-full max-w-md space-y-6">
+          {/* The brand panel is hidden below lg, so carry a compact mark here instead. */}
+          <div className="flex items-center justify-center gap-2.5 lg:hidden">
+            <BrandMark className="h-10 w-10 text-xl" />
             <span className="font-serif text-2xl font-semibold">HireLens</span>
           </div>
-          <h1 className="text-xl">{title}</h1>
-          <p className="text-sm text-ink-muted">{subtitle}</p>
+
+          <div className="space-y-1.5 text-center lg:text-left">
+            <h1 className="font-serif text-2xl font-semibold">{title}</h1>
+            <p className="text-sm text-ink-muted">{subtitle}</p>
+          </div>
+
+          <div className="card p-6">{children}</div>
+
+          <p className="text-center text-sm text-ink-muted lg:text-left">{footer}</p>
+        </div>
+      </div>
+
+      <aside className="hidden border-l border-line bg-paper-sunken lg:flex lg:w-[44%] lg:flex-col lg:justify-center lg:px-14 xl:px-20">
+        <div className="mb-8 flex items-center gap-3">
+          <BrandMark className="h-12 w-12 text-2xl" />
+          <span className="font-serif text-3xl font-semibold">HireLens</span>
         </div>
 
-        <div className="card p-6">{children}</div>
+        <p className="mb-10 max-w-md text-lg leading-relaxed text-ink-muted">
+          Screen a stack of CVs against one job description, and get back a ranked shortlist you
+          can defend.
+        </p>
 
-        <p className="text-center text-sm text-ink-muted">{footer}</p>
-      </div>
+        <ul className="max-w-md space-y-6">
+          {HIGHLIGHTS.map((item) => (
+            <li key={item.title}>
+              <p className="eyebrow mb-1">{item.title}</p>
+              <p className="text-sm leading-relaxed text-ink-muted">{item.body}</p>
+            </li>
+          ))}
+        </ul>
+      </aside>
     </div>
+  );
+}
+
+const HIGHLIGHTS = [
+  {
+    title: "Evidence, not vibes",
+    body: "Every score cites the lines of the CV it rests on, and names the gaps it could not close.",
+  },
+  {
+    title: "Structured profiles",
+    body: "Contact details, skills, education and achievements pulled into fields you can export.",
+  },
+  {
+    title: "Interview kits on demand",
+    body: "Role-specific questions with rubrics for what a strong answer actually covers.",
+  },
+];
+
+function BrandMark({ className = "" }: { className?: string }) {
+  return (
+    <span
+      className={`grid place-items-center rounded-xl bg-coral font-serif font-bold text-white ${className}`}
+    >
+      H
+    </span>
   );
 }
