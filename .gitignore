@@ -71,3 +71,9 @@ yarn-error.log*
 *.db-shm
 *.sqlite
 *.sqlite3
+
+# Vercel CLI project link
+.vercel/
+
+.vercel
+.env*

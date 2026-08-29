@@ -231,9 +231,12 @@ which on Vercel resolves to the static site itself and 404s.
 `$PORT` from the platform. It works as-is on Railway, Render, Fly.io and Cloud Run — point the
 service at the `backend/` directory as the build context.
 
-**Render, in a few clicks:** [`render.yaml`](render.yaml) is a blueprint. In Render pick
-**New → Blueprint** and choose this repo; it creates the API service plus a Postgres database and
-wires `DATABASE_URL` between them. Two values are deliberately left blank and must be filled in
+**Render, in one click:**
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/abdulhaseebofficial/cv-analyzer-pro)
+
+[`render.yaml`](render.yaml) is a blueprint: it creates the API service plus a Postgres database
+and wires `DATABASE_URL` between them. Two values are deliberately left blank and must be entered
 before the first boot — `GOOGLE_API_KEY` and `CORS_ORIGINS`.
 
 Environment variables the API needs in production:
