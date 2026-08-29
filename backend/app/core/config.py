@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
+import json
 import secrets
 from functools import lru_cache
-from typing import Literal
+from typing import Annotated, Literal
 
 from pydantic import Field, field_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 PLACEHOLDER_HINTS = ("your_api_key", "your-api-key", "placeholder", "changeme", "xxxx")
 
@@ -39,7 +40,12 @@ class Settings(BaseSettings):
     refresh_token_ttl_days: int = 14
     password_min_length: int = 10
 
-    cors_origins: list[str] = ["http://localhost:5173", "http://127.0.0.1:5173"]
+    # NoDecode keeps pydantic-settings from JSON-decoding this at the source, which
+    # happens before validators run and rejects the documented comma-separated form.
+    cors_origins: Annotated[list[str], NoDecode] = [
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    ]
 
     # -- Database ------------------------------------------------------------
     database_url: str = "sqlite+aiosqlite:///./hirelens.db"
@@ -68,11 +74,18 @@ class Settings(BaseSettings):
     @field_validator("cors_origins", mode="before")
     @classmethod
     def _split_origins(cls, value: object) -> object:
-        """Accept a comma-separated string so CORS_ORIGINS works as a plain env var."""
+        """Accept a comma-separated string so CORS_ORIGINS works as a plain env var.
+
+        NoDecode on the field means nothing has parsed this yet, so a JSON array
+        has to be handled here too.
+        """
         if isinstance(value, str):
             stripped = value.strip()
             if stripped.startswith("["):
-                return value
+                try:
+                    return json.loads(stripped)
+                except json.JSONDecodeError as exc:
+                    raise ValueError(f"CORS_ORIGINS is not valid JSON: {exc}") from exc
             return [origin.strip() for origin in stripped.split(",") if origin.strip()]
         return value
 

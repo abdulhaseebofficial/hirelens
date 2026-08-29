@@ -54,3 +54,38 @@ class TestGoogleApiKey:
         settings = Settings(google_api_key=key)
         assert settings.google_api_key == key
         assert settings.gemini_configured is True
+
+
+class TestCorsOrigins:
+    """CORS_ORIGINS arrives as a plain env var, which pydantic-settings would
+    otherwise try to JSON-decode at the source before any validator runs."""
+
+    def test_accepts_the_documented_comma_separated_form(self):
+        assert Settings(cors_origins="https://a.vercel.app,https://b.vercel.app").cors_origins == [
+            "https://a.vercel.app",
+            "https://b.vercel.app",
+        ]
+
+    def test_accepts_a_single_origin(self):
+        assert Settings(cors_origins="https://a.vercel.app").cors_origins == [
+            "https://a.vercel.app"
+        ]
+
+    def test_trims_whitespace_and_drops_empties(self):
+        assert Settings(cors_origins="  https://a.com , , https://b.com  ").cors_origins == [
+            "https://a.com",
+            "https://b.com",
+        ]
+
+    def test_still_accepts_a_json_array(self):
+        assert Settings(cors_origins='["https://a.com", "https://b.com"]').cors_origins == [
+            "https://a.com",
+            "https://b.com",
+        ]
+
+    def test_a_list_passes_through(self):
+        assert Settings(cors_origins=["https://a.com"]).cors_origins == ["https://a.com"]
+
+    def test_malformed_json_is_reported_clearly(self):
+        with pytest.raises(ValueError, match="not valid JSON"):
+            Settings(cors_origins='["https://a.com"')

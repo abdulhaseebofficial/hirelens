@@ -65,7 +65,9 @@ frontend/node_modules/
 npm-debug.log*
 yarn-error.log*
 
-# Local database
+# Local database. The -wal/-shm sidecars appear whenever SQLite is in WAL mode.
 *.db
+*.db-wal
+*.db-shm
 *.sqlite
 *.sqlite3
