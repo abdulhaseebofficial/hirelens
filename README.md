@@ -192,6 +192,69 @@ npm run build
 CI runs exactly these steps on every push and pull request — see
 [`.github/workflows/ci.yml`](.github/workflows/ci.yml).
 
+## 🚢 Deployment
+
+The frontend is a static bundle and the backend is a long-running process, so they deploy to
+different places.
+
+> **The backend does not belong on a serverless platform.** `POST /analyses` returns `202` and
+> finishes the work in a FastAPI background task, which only runs *after* the response is sent —
+> a serverless function is frozen at that point, so analyses would never leave `pending`. The
+> default SQLite database has the same problem: serverless filesystems are ephemeral. Deploy the
+> API to a host that keeps a process alive.
+
+### Frontend on Vercel
+
+[`vercel.json`](vercel.json) at the repo root already points Vercel at `frontend/`, builds it,
+and adds the SPA rewrite so `/login` and `/analyses/:id` resolve on a hard refresh.
+
+Set one environment variable in the Vercel project **before** the first build:
+
+| Variable | Value |
+|---|---|
+| `VITE_API_BASE_URL` | `https://<your-api-host>/api/v1` |
+
+Vite inlines `import.meta.env` values at build time, so changing this variable requires a
+redeploy — it is not read at runtime. Without it the app falls back to a relative `/api/v1`,
+which on Vercel resolves to the static site itself and 404s.
+
+### Backend on a container host
+
+[`backend/Dockerfile`](backend/Dockerfile) runs the migrations and then the server, reading
+`$PORT` from the platform. It works as-is on Railway, Render, Fly.io and Cloud Run — point the
+service at the `backend/` directory as the build context.
+
+Environment variables the API needs in production:
+
+| Variable | Notes |
+|---|---|
+| `GOOGLE_API_KEY` | Required; analysis endpoints refuse requests without it |
+| `SECRET_KEY` | **Required.** Unset means a new key per process, logging everyone out on restart |
+| `DATABASE_URL` | `postgresql+asyncpg://…` — see below |
+| `CORS_ORIGINS` | Must include the Vercel URL, e.g. `https://your-app.vercel.app` |
+| `ENVIRONMENT` | `production` |
+
+### Use Postgres, not SQLite
+
+SQLite lives on the container filesystem, which is wiped on every deploy and not shared between
+instances. Point `DATABASE_URL` at Postgres and uncomment the driver in
+[`backend/requirements.txt`](backend/requirements.txt):
+
+```diff
+-# asyncpg>=0.29
++asyncpg>=0.29
+```
+
+```
+DATABASE_URL=postgresql+asyncpg://user:password@host:5432/hirelens
+```
+
+### Order of operations
+
+1. Deploy the backend first and note its public URL.
+2. Set `VITE_API_BASE_URL` in Vercel to `https://<that-url>/api/v1`, then deploy the frontend.
+3. Add the resulting Vercel URL to `CORS_ORIGINS` on the backend and restart it.
+
 ## 📂 Project Structure
 
 ```
@@ -206,7 +269,8 @@ cv-analyzer-pro/
 │   │   ├── services/        # Gemini, parsing, PDF, export, prompts
 │   │   └── main.py          # app factory + middleware
 │   ├── alembic/             # migrations
-│   └── tests/               # pytest suite
+│   ├── tests/               # pytest suite
+│   └── Dockerfile           # container image for the API host
 ├── frontend/                # React + Vite recruiter console
 │   └── src/
 │       ├── api/             # typed API client
@@ -215,6 +279,7 @@ cv-analyzer-pro/
 │       └── pages/           # dashboard, analysis, reports, auth
 ├── legacy/                  # original Streamlit prototype
 ├── docs/screenshots/        # images used by this README
+├── vercel.json              # builds the frontend on Vercel
 └── .github/workflows/ci.yml
 ```
 
