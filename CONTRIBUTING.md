@@ -1,75 +1,42 @@
-# Contributing to CV Analyzer Pro
+# Contributing to HireLens
 
-Thank you for your interest in contributing to CV Analyzer Pro! We welcome contributions from the community.
+Bug reports, documentation improvements, and focused code contributions are welcome.
+Start with the [README](README.md#quick-start) to run the application locally.
 
-## How to Contribute
+## Report a bug or propose a feature
 
-### Reporting Bugs
+Use the repository's issue templates. Include reproduction steps and the expected
+result for bugs, or the user problem and proposed behavior for features.
+Use fictional candidate data in reports and screenshots; remove API keys and tokens.
 
-If you find a bug, please create an issue with:
-- Clear description of the problem
-- Steps to reproduce
-- Expected vs actual behavior
-- Screenshots (if applicable)
-- Your environment (OS, Python version, etc.)
+## Make a change
 
-### Suggesting Features
+1. Fork the repository and create a branch from `main`.
+2. Keep the change focused on one problem.
+3. Follow the existing Python and TypeScript conventions.
+4. Add or update tests when changing application behavior.
+5. Update documentation when setup, configuration, or user behavior changes.
+6. Open a pull request describing the problem, solution, and validation.
 
-We love feature suggestions! Please create an issue with:
-- Clear description of the feature
-- Use case and benefits
-- Possible implementation approach (optional)
+For schema changes, include an Alembic migration. If backend runtime dependencies
+change, keep `backend/requirements.txt` and `backend/pyproject.toml` aligned.
 
-### Pull Requests
+## Validation
 
-1. **Fork the repository**
-   ```bash
-   git clone https://github.com/yourusername/cv-analyzer-pro.git
-   ```
+From `backend/`, with development dependencies installed:
 
-2. **Create a feature branch**
-   ```bash
-   git checkout -b feature/your-feature-name
-   ```
+```bash
+ruff check .
+pytest -q
+```
 
-3. **Make your changes**
-   - Write clear, commented code
-   - Follow existing code style
-   - Test your changes thoroughly
+From `frontend/`, after `npm ci`:
 
-4. **Commit your changes**
-   ```bash
-   git commit -m "Add: Brief description of your changes"
-   ```
+```bash
+npm run lint
+npm run typecheck
+npm run build
+```
 
-5. **Push to your fork**
-   ```bash
-   git push origin feature/your-feature-name
-   ```
-
-6. **Create a Pull Request**
-   - Provide clear description
-   - Reference related issues
-   - Include screenshots (if UI changes)
-
-## Code Style Guidelines
-
-- Follow PEP 8 for Python code
-- Use meaningful variable and function names
-- Add docstrings for functions
-- Comment complex logic
-- Keep functions focused and small
-
-## Testing
-
-Before submitting a PR:
-- Test with different CV formats
-- Verify all features work
-- Check for console errors
-- Test edge cases
-
-## Questions?
-
-Feel free to open an issue for any questions or clarifications.
-
-Thank you for contributing! 🙏
+For documentation-only changes, check links, commands, and rendered Markdown.
+Include screenshots for visible interface changes and describe any checks you could not run.

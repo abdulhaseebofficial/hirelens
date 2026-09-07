@@ -1,3 +1,5 @@
+> **Historical reference:** This guide may describe an earlier version. For the current HireLens application, use the [README](README.md) and [deployment guide](docs/DEPLOYMENT.md).
+
 # 🎯 Repository Ready for GitHub!
 
 > ⚠️ **Outdated.** This document describes the original Streamlit prototype, which now lives in

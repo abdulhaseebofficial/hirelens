@@ -1,333 +1,206 @@
-# 📋 CV Analyzer Pro
+<div align="center">
 
-AI-powered CV screening for recruiters and hiring managers. Upload a batch of CVs against a job
-description and get evidence-based fit scores, structured candidate profiles, and ready-to-use
-interview kits.
+# HireLens
 
-![Python](https://img.shields.io/badge/python-3.11%2B-blue.svg)
-![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688.svg)
-![React](https://img.shields.io/badge/React-19-61dafb.svg)
-![License](https://img.shields.io/badge/license-MIT-green.svg)
+### Turn CVs into structured hiring insights.
 
-The project is a FastAPI backend (`HireLens API`) paired with a React + Vite recruiter console.
-The original Streamlit prototype is kept under [`legacy/`](legacy/) for reference.
+Screen candidate batches against a job description, review evidence-backed fit scores,
+and prepare focused interviews in one recruiter workspace.
 
-## 📸 Screenshots
+[![CI](https://github.com/abdulhaseebofficial/hirelens/actions/workflows/ci.yml/badge.svg)](https://github.com/abdulhaseebofficial/hirelens/actions/workflows/ci.yml)
+![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white)
+![React](https://img.shields.io/badge/React-19-149ECA?logo=react&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-> The candidates below are fictional demo content, used to show what the interface looks like
-> with a completed batch. They are not model output.
+[Quick start](#quick-start) - [Deployment](docs/DEPLOYMENT.md) - [Contributing](CONTRIBUTING.md) - [Report an issue](https://github.com/abdulhaseebofficial/hirelens/issues)
 
-### Ranking and fit score
+</div>
 
-Every CV in a batch is scored 0-100 and ranked, with the evidence behind the score laid out
-against the job description.
+![HireLens candidate ranking and fit report](docs/screenshots/04-fit-score.png)
 
-![Ranked candidates with the fit score report open](docs/screenshots/04-fit-score.png)
+> Screenshots show fictional demonstration data, not actual model output.
 
-### Candidate snapshot
+## What you can do
 
-The structured profile pulled out of the CV — contact details, current role, skills, education
-and achievements — exportable as JSON or CSV.
+| Capability | What it delivers |
+| --- | --- |
+| **Batch screening** | Compare up to 15 PDF CVs against one job description by default. |
+| **Fit scoring** | Review 0-100 scores, supporting evidence, gaps, and fit verdicts. |
+| **Candidate profiles** | Extract experience, skills, education, and contact information. |
+| **Interview preparation** | Generate candidate-specific questions and evaluation rubrics. |
+| **Saved analyses** | Return to screening history in your account. |
+| **CSV export** | Take candidate results into your existing workflow. |
 
-![Structured candidate profile extracted from the CV](docs/screenshots/05-candidate-profile.png)
+AI-generated scores and summaries support recruiter review; verify them against the original CV.
 
-### Interview kit
-
-Role-specific questions generated on demand, each with what a strong answer covers, plus red
-flags worth probing.
-
-![Generated interview kit with questions and rubrics](docs/screenshots/06-interview-kit.png)
-
-### Starting an analysis
-
-![Upload form for CVs and the job description](docs/screenshots/03-new-analysis.png)
+## Product tour
 
 <details>
-<summary>Sign in and screening history</summary>
+<summary><strong>Candidate profile and interview kit</strong></summary>
 
-![Sign in screen](docs/screenshots/01-login.png)
-
-![List of previous analyses](docs/screenshots/02-dashboard.png)
+![Candidate profile](docs/screenshots/05-candidate-profile.png)
+![Interview kit](docs/screenshots/06-interview-kit.png)
 
 </details>
 
-## 🌟 Features
+<details>
+<summary><strong>Upload, dashboard, and sign in</strong></summary>
 
-### 📊 JD ↔ CV Fit Score
-- **0–100 match score** — quantitative candidate/job alignment
-- **Evidence-based matching** — specific CV excerpts backing each requirement
-- **Gap analysis** — missing or weak areas called out explicitly
-- **Actionable verdict** — strong / moderate / weak fit
+![New analysis](docs/screenshots/03-new-analysis.png)
+![Screening history](docs/screenshots/02-dashboard.png)
+![Sign in](docs/screenshots/01-login.png)
 
-### 👤 Candidate Snapshot
-- **Structured extraction** — name, contact, experience, skills, education, achievements
-- **CSV export** — per-analysis and per-candidate, ready for ATS import
+</details>
 
-### 📝 Interview Kit Generator
-- **Role-specific questions** tailored to the JD and the candidate's background
-- **Evaluation rubrics** describing what a strong answer looks like
-- **Red flags & clarifications** worth probing in the interview
+## Architecture
 
-### 🗂️ Batch Ranking
-- Upload up to 15 CVs (configurable) and rank them against one JD
-- Analyses run concurrently and are persisted per user
-
-## 🛠️ Tech Stack
-
-| Layer | Stack |
-|---|---|
-| Backend | FastAPI, SQLAlchemy 2 (async), Alembic, PyJWT, Pydantic v2 |
-| Frontend | React 19, Vite 6, TypeScript, Tailwind CSS v4, React Router 7 |
-| AI | Google Gemini via `google-genai` |
-| Database | SQLite by default; PostgreSQL supported via `DATABASE_URL` |
-| Tests | pytest (62 tests), ruff |
-
-## 🚀 Quick Start
-
-### Prerequisites
-
-- Python **3.11+**
-- Node.js **20+**
-- A Google Gemini API key — https://aistudio.google.com/app/apikey
-
-### 1. Clone
-
-```bash
-git clone https://github.com/abdulhaseebofficial/cv-analyzer-pro.git
-cd cv-analyzer-pro
+```mermaid
+flowchart LR
+    A[React recruiter console] --> B[FastAPI REST API]
+    B --> C[(SQLite / PostgreSQL)]
+    B --> D[Google Gemini]
+    B --> E[PDF text extraction]
 ```
 
-### 2. Backend
+| Layer | Technology |
+| --- | --- |
+| Frontend | React 19, TypeScript, Vite 6, Tailwind CSS 4, React Router 7 |
+| API | FastAPI, Pydantic 2, async SQLAlchemy, Alembic |
+| AI | Google Gemini through the Google Gen AI SDK |
+| Storage | SQLite for local development; PostgreSQL supported |
+| Authentication | JWT access tokens, rotating refresh tokens, bcrypt |
+| Quality checks | pytest, Ruff, ESLint, TypeScript, production build |
+
+## Quick start
+
+You need **Python 3.11+**, **Node.js 22**, and a Google Gemini API key for analysis.
+
+```bash
+git clone https://github.com/abdulhaseebofficial/hirelens.git
+cd hirelens
+```
+
+### 1. Start the backend
 
 ```bash
 cd backend
-python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
-pip install -r requirements-dev.txt
+python -m venv .venv
+```
 
-cp .env.example .env      # then fill in GOOGLE_API_KEY and SECRET_KEY
+Activate the environment:
+
+```bash
+# macOS / Linux
+source .venv/bin/activate
+```
+
+```powershell
+# Windows PowerShell
+.venv\Scripts\Activate.ps1
+```
+
+Install dependencies and create your configuration:
+
+```bash
+pip install -r requirements-dev.txt
+```
+
+Copy `backend/.env.example` to `backend/.env`. Set `GOOGLE_API_KEY` and a persistent
+`SECRET_KEY`. Generate a secret with:
+
+```bash
+python -c "import secrets; print(secrets.token_urlsafe(48))"
+```
+
+From `backend/`, run:
+
+```bash
 alembic upgrade head
 uvicorn app.main:app --reload
 ```
 
-The API is now on **http://127.0.0.1:8000** with interactive docs at **/docs**.
+API: **http://127.0.0.1:8000** - Interactive API documentation: **http://127.0.0.1:8000/docs**
 
-> `SECRET_KEY` is optional in development — one is generated per process — but leaving it unset
-> invalidates every token on restart. Generate one with:
-> `python -c "import secrets; print(secrets.token_urlsafe(48))"`
+### 2. Start the frontend
 
-### 3. Frontend
-
-In a second terminal:
+Open another terminal at the repository root:
 
 ```bash
 cd frontend
-npm install
+npm ci
 npm run dev
 ```
 
-The console opens on **http://localhost:5173**. The dev server proxies `/api` to the backend on
-port 8000, so the browser sees a same-origin API and CORS never comes up locally.
+Open **http://localhost:5173**, register an account, and create an analysis.
+Try [sample_cv.pdf](sample_cv.pdf) with the text from [sample_jd.txt](sample_jd.txt).
 
-### 4. Use it
+CVs must be PDFs with selectable text; scanned PDFs need OCR before upload.
+Paste the job description as text (at least 50 characters).
 
-Register an account in the UI, create an analysis, upload one or more CVs, and review the ranked
-results.
+### 3. Check the connection
 
-**CVs must be PDFs.** Text is extracted with PyPDF2, so an upload that is not a PDF — or a scanned,
-image-only PDF with no text layer — is rejected with an explanatory message instead of being
-analysed. The job description is pasted as text rather than uploaded, and must be at least 50
-characters.
+Open **http://127.0.0.1:8000/api/v1/health/ready**. The `checks.database` field should
+be `ok`. The overall status also depends on whether Gemini is configured.
+`/api/v1/health` checks only that the API process is running.
 
-To try it: upload `sample_cv.pdf` and paste the contents of `sample_jd.txt` (both in the repo root).
+## Configuration
 
-## 📡 API Overview
+When launched from `backend/`, settings load `backend/.env`, followed by the root
+`.env` (root values take precedence). Process environment variables override both.
+**The backend does not automatically load `.env.local`.**
 
-All routes live under `/api/v1`. Authenticate with `POST /auth/login`, then send
-`Authorization: Bearer <access_token>`.
+| Variable | Purpose / default |
+| --- | --- |
+| `GOOGLE_API_KEY` | Required for AI analysis. |
+| `SECRET_KEY` | Set a persistent random value for signed tokens. |
+| `DATABASE_URL` | Defaults to `sqlite+aiosqlite:///./hirelens.db`. |
+| `CORS_ORIGINS` | Allowed frontend origins; localhost is configured for development. |
+| `MAX_BATCH_SIZE` | `15` CVs per analysis. |
+| `MAX_FILE_SIZE_MB` | `10` MB per file. |
+| `VITE_API_BASE_URL` | Frontend API URL; defaults to `/api/v1` through the dev proxy. |
 
-| Method | Path | Purpose |
-|---|---|---|
-| `POST` | `/auth/register`, `/auth/login` | Create a session |
-| `POST` | `/auth/refresh`, `/auth/logout`, `/auth/logout-all` | Token lifecycle |
-| `GET` | `/auth/me` | Current user |
-| `POST` | `/analyses` | Upload CVs + JD, start an analysis |
-| `GET` | `/analyses`, `/analyses/{id}` | List / fetch analyses |
-| `DELETE` | `/analyses/{id}` | Delete an analysis |
-| `GET` | `/analyses/{id}/candidates/{cid}` | Candidate detail |
-| `POST` | `/analyses/{id}/candidates/{cid}/interview-kit` | Generate an interview kit |
-| `GET` | `/analyses/{id}/export.csv` | Export results |
-| `GET` | `/health`, `/health/ready`, `/config` | Service status |
+See [backend/.env.example](backend/.env.example) for all backend settings and
+[the deployment guide](docs/DEPLOYMENT.md) for production configuration.
 
-The full, always-current schema is at `/docs`.
+## Development
 
-## ⚙️ Configuration
-
-Backend settings are read from `backend/.env` — see
-[`backend/.env.example`](backend/.env.example) for every option with comments. The ones you are
-most likely to change:
-
-| Variable | Default | Notes |
-|---|---|---|
-| `GOOGLE_API_KEY` | _(empty)_ | Required — analysis endpoints refuse requests without it |
-| `SECRET_KEY` | generated per process | **Set this in production** |
-| `DATABASE_URL` | `sqlite+aiosqlite:///./hirelens.db` | Postgres: `postgresql+asyncpg://…` |
-| `CORS_ORIGINS` | `http://localhost:5173,…` | Allowed browser origins |
-| `MAX_BATCH_SIZE` | `15` | CVs per analysis |
-| `MAX_FILE_SIZE_MB` | `10` | Per-file upload cap |
-
-## 🧪 Development
+Run the same checks as [CI](.github/workflows/ci.yml):
 
 ```bash
-# Backend
-cd backend
+# From backend/
 ruff check .
 pytest -q
+```
 
-# Frontend
-cd frontend
+```bash
+# From frontend/
+npm run lint
 npm run typecheck
 npm run build
 ```
 
-CI runs exactly these steps on every push and pull request — see
-[`.github/workflows/ci.yml`](.github/workflows/ci.yml).
+## Repository map
 
-## 🚢 Deployment
-
-The frontend is a static bundle and the backend is a long-running process, so they deploy to
-different places.
-
-**Live:** [cv-analyzer-pro-sigma.vercel.app](https://cv-analyzer-pro-sigma.vercel.app), with the
-API at [hirelens-api.vercel.app](https://hirelens-api.vercel.app) and Neon Postgres behind it.
-
-> The API runs as a Vercel Python function. Vercel does finish the FastAPI background task that
-> `POST /analyses` schedules — a single-CV batch completes end to end — but a serverless function
-> still has a wall-clock limit, so a large batch can be cut off mid-run. A host that keeps a
-> process alive (the Dockerfile and blueprint below) has no such ceiling. SQLite is not an option
-> either way: serverless filesystems are ephemeral, hence Postgres.
-
-### Frontend on Vercel
-
-[`vercel.json`](vercel.json) at the repo root already points Vercel at `frontend/`, builds it,
-and adds the SPA rewrite so `/login` and `/analyses/:id` resolve on a hard refresh. The rewrite
-deliberately excludes `/api/*`: catching those too would answer an unconfigured API call with
-`index.html` and a `200`, and the client would fail on `response.json()` with a parse error rather
-than a readable one.
-
-The prototype's `requirements.txt` and `runtime.txt` live in `legacy/` rather than the repo root,
-so nothing at the top level looks like a Python app. With them at the root, Vercel detected the
-repo as Python and failed the build looking for an ASGI entrypoint.
-
-Set one environment variable in the frontend project **before** the first build:
-
-| Variable | Value |
-|---|---|
-| `VITE_API_BASE_URL` | `https://<your-api-host>/api/v1` |
-
-Vite inlines `import.meta.env` values at build time, so changing this variable requires a
-redeploy — it is not read at runtime. Without it the app falls back to a relative `/api/v1`,
-which on Vercel resolves to the static site itself and 404s.
-
-### Backend as a Vercel function
-
-`backend/pyproject.toml` declares the ASGI entrypoint Vercel needs:
-
-```toml
-[tool.vercel]
-entrypoint = "app.main:app"
+```text
+hirelens/
+  backend/          FastAPI application, migrations, and tests
+  frontend/         React recruiter console
+  docs/             Deployment guide and product screenshots
+  .github/          CI, issue templates, and pull request template
+  legacy/           Original Streamlit prototype
 ```
 
-Deploy `backend/` as its own Vercel project and set `DATABASE_URL`, `SECRET_KEY`,
-`GOOGLE_API_KEY` and `CORS_ORIGINS` on it. Vercel installs from `pyproject.toml`, not
-`requirements.txt`, which is why the dependency list lives in both — `tests/test_packaging.py`
-fails if they drift apart. Migrations do not run on deploy; point `DATABASE_URL` at the database
-and run `alembic upgrade head` once from a machine that can reach it.
+## Documentation and community
 
-### Backend on a container host
+- [Deployment guide](docs/DEPLOYMENT.md) - hosting, database setup, and readiness checks.
+- [Contributing](CONTRIBUTING.md) - local checks and pull request expectations.
+- [API routes](backend/app/api/v1/) - implementation; run the API to browse `/docs`.
+- [Issues](https://github.com/abdulhaseebofficial/hirelens/issues) - bugs and feature requests.
 
-[`backend/Dockerfile`](backend/Dockerfile) runs the migrations and then the server, reading
-`$PORT` from the platform. It works as-is on Railway, Render, Fly.io and Cloud Run — point the
-service at the `backend/` directory as the build context.
+Older root-level guides describe the Streamlit prototype and are retained as historical reference.
+Use this README for the current FastAPI + React application.
 
-**Render, in one click:**
+## License
 
-[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/abdulhaseebofficial/cv-analyzer-pro)
-
-[`render.yaml`](render.yaml) is a blueprint: it creates the API service plus a Postgres database
-and wires `DATABASE_URL` between them. Two values are deliberately left blank and must be entered
-before the first boot — `GOOGLE_API_KEY` and `CORS_ORIGINS`.
-
-Environment variables the API needs in production:
-
-| Variable | Notes |
-|---|---|
-| `GOOGLE_API_KEY` | Required; analysis endpoints refuse requests without it |
-| `SECRET_KEY` | **Required.** Unset means a new key per process, logging everyone out on restart |
-| `DATABASE_URL` | `postgresql+asyncpg://…` — see below |
-| `CORS_ORIGINS` | Must include the Vercel URL, e.g. `https://your-app.vercel.app` |
-| `ENVIRONMENT` | `production` |
-
-### Use Postgres, not SQLite
-
-SQLite lives on the container filesystem, which is wiped on every deploy and not shared between
-instances, so point `DATABASE_URL` at Postgres. The `asyncpg` driver ships in
-[`backend/requirements.txt`](backend/requirements.txt), so there is nothing to uncomment.
-
-```
-DATABASE_URL=postgresql+asyncpg://user:password@host:5432/hirelens
-```
-
-Managed hosts hand out a sync DSN (`postgres://…`), which SQLAlchemy's async engine rejects.
-`app/core/config.py` rewrites those to `postgresql+asyncpg://` on load, so the value Render or
-Railway injects works untouched.
-
-### Order of operations
-
-1. Deploy the backend first and note its public URL.
-2. Set `VITE_API_BASE_URL` in Vercel to `https://<that-url>/api/v1`, then deploy the frontend.
-3. Add the resulting Vercel URL to `CORS_ORIGINS` on the backend and restart it.
-
-## 📂 Project Structure
-
-```
-cv-analyzer-pro/
-├── backend/                 # FastAPI service (HireLens API)
-│   ├── app/
-│   │   ├── api/v1/          # auth, analyses, health routes
-│   │   ├── core/            # config, security, logging, rate limiting
-│   │   ├── db/              # async session + base
-│   │   ├── models/          # SQLAlchemy models
-│   │   ├── schemas/         # Pydantic request/response models
-│   │   ├── services/        # Gemini, parsing, PDF, export, prompts
-│   │   └── main.py          # app factory + middleware
-│   ├── alembic/             # migrations
-│   ├── tests/               # pytest suite
-│   └── Dockerfile           # container image for the API host
-├── frontend/                # React + Vite recruiter console
-│   └── src/
-│       ├── api/             # typed API client
-│       ├── components/      # UI building blocks
-│       ├── context/hooks/   # auth + analysis state
-│       └── pages/           # dashboard, analysis, reports, auth
-├── legacy/                  # original Streamlit prototype and its requirements/runtime
-├── docs/screenshots/        # images used by this README
-├── vercel.json              # builds the frontend on Vercel
-├── render.yaml              # blueprint for the API + Postgres on Render
-└── .github/workflows/ci.yml
-```
-
-## 🔒 Security Notes
-
-- **Never commit `.env`** — it is gitignored, and `.env.example` documents the shape instead.
-- Passwords are hashed with bcrypt; a 10-character minimum is enforced by default.
-- Access tokens are short-lived (30 min) with refresh tokens rotated on use.
-- Rate limits apply globally and, more strictly, to analysis endpoints.
-- Set `SECRET_KEY` in production so sessions survive a restart.
-
-## 🤝 Contributing
-
-See [CONTRIBUTING.md](CONTRIBUTING.md). Please keep `ruff check` and `pytest` green.
-
-## 📝 License
-
-MIT — see [LICENSE](LICENSE).
+Released under the [MIT License](LICENSE).

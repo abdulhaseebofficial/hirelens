@@ -1,3 +1,5 @@
+> **Historical reference:** This guide may describe an earlier version. For the current HireLens application, use the [README](README.md) and [deployment guide](docs/DEPLOYMENT.md).
+
 # 🔧 Setup & Deployment Guide
 
 Complete guide for setting up CV Analyzer Pro locally and deploying to production.
