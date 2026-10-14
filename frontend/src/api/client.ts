@@ -8,7 +8,7 @@
 
 import type { ApiErrorBody, TokenPair } from "@/types";
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "/api/v1";
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || "/api/v1";
 const ACCESS_KEY = "hirelens.access_token";
 const REFRESH_KEY = "hirelens.refresh_token";
 
@@ -30,6 +30,7 @@ export class ApiError extends Error {
     this.status = status;
     this.code = code;
     this.details = details;
+    Object.setPrototypeOf(this, ApiError.prototype);
   }
 
   /** Field-level validation messages, ready to show under inputs. */
@@ -41,6 +42,13 @@ export class ApiError extends Error {
     }
     return map;
   }
+}
+
+export function isApiError(err: unknown): err is ApiError {
+  return (
+    err instanceof ApiError ||
+    (typeof err === "object" && err !== null && (err as { name?: string }).name === "ApiError")
+  );
 }
 
 export const tokenStore = {
@@ -57,6 +65,25 @@ export const tokenStore = {
   clear() {
     localStorage.removeItem(ACCESS_KEY);
     localStorage.removeItem(REFRESH_KEY);
+  },
+};
+
+const GEMINI_KEY_STORAGE = "hirelens.gemini_api_key";
+
+export const apiKeyStore = {
+  get key(): string {
+    return (localStorage.getItem(GEMINI_KEY_STORAGE) || "").trim();
+  },
+  set(key: string) {
+    const cleaned = key.trim();
+    if (cleaned) {
+      localStorage.setItem(GEMINI_KEY_STORAGE, cleaned);
+    } else {
+      localStorage.removeItem(GEMINI_KEY_STORAGE);
+    }
+  },
+  clear() {
+    localStorage.removeItem(GEMINI_KEY_STORAGE);
   },
 };
 
@@ -138,6 +165,10 @@ async function send(path: string, options: RequestOptions, retry = true): Promis
 
   if (!anonymous && tokenStore.access) {
     headers.set("Authorization", `Bearer ${tokenStore.access}`);
+  }
+
+  if (apiKeyStore.key) {
+    headers.set("X-Gemini-API-Key", apiKeyStore.key);
   }
 
   const response = await fetch(`${BASE_URL}${path}`, { method, headers, body: payload, signal });

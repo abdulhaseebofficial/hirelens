@@ -1,4 +1,6 @@
-import { useCallback, useId, useRef, useState } from "react";
+import { useCallback, useId, useState } from "react";
+
+import { IconAlert, IconFile, IconUpload, IconX } from "@/components/icons";
 
 interface UploadZoneProps {
   files: File[];
@@ -23,7 +25,6 @@ export function UploadZone({
 }: UploadZoneProps) {
   const [dragging, setDragging] = useState(false);
   const [rejected, setRejected] = useState<string[]>([]);
-  const inputRef = useRef<HTMLInputElement>(null);
   const inputId = useId();
 
   const addFiles = useCallback(
@@ -79,29 +80,31 @@ export function UploadZone({
           setDragging(false);
           if (!disabled) addFiles(event.dataTransfer.files);
         }}
-        className={`flex min-h-[13rem] flex-1 cursor-pointer flex-col items-center justify-center gap-2
-          rounded-2xl border-[1.5px] border-dashed px-6 py-10 text-center transition-colors
-          ${dragging ? "border-coral bg-coral/10" : "border-line bg-paper-raised"}
-          ${disabled ? "cursor-not-allowed opacity-50" : "hover:border-coral/60"}`}
+        className={`group relative flex min-h-[13rem] flex-1 cursor-pointer flex-col items-center
+          justify-center gap-2.5 overflow-hidden rounded-card border-[1.5px] border-dashed px-6 py-10
+          text-center transition-all duration-200
+          ${
+            dragging
+              ? "scale-[1.01] border-coral bg-coral/10"
+              : "border-line-strong bg-paper-raised hover:border-coral/60 hover:bg-paper-hover"
+          }
+          ${disabled ? "cursor-not-allowed opacity-50" : ""}`}
       >
-        <svg
-          className="h-8 w-8 text-coral"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.8"
-          aria-hidden="true"
+        <span
+          className={`grid h-12 w-12 place-items-center rounded-2xl border border-coral/25
+            bg-coral/12 text-coral-light transition-transform duration-200
+            ${dragging ? "scale-110" : "group-hover:scale-105"}`}
         >
-          <path d="M12 16V4m0 0L8 8m4-4 4 4" strokeLinecap="round" strokeLinejoin="round" />
-          <path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" strokeLinecap="round" />
-        </svg>
-        <span className="font-semibold text-ink">Drop CVs here, or browse</span>
+          <IconUpload className="h-5 w-5" />
+        </span>
+        <span className="font-semibold text-ink">
+          {dragging ? "Release to add these CVs" : "Drop CVs here, or browse"}
+        </span>
         <span className="text-xs text-ink-muted">
           PDF only · up to {maxFiles} files · max {maxFileSizeMb} MB each
         </span>
         <input
           id={inputId}
-          ref={inputRef}
           type="file"
           accept="application/pdf,.pdf"
           multiple
@@ -116,9 +119,12 @@ export function UploadZone({
       </label>
 
       {rejected.length > 0 && (
-        <ul className="space-y-1 text-xs text-fit-low-light">
+        <ul className="space-y-1.5 rounded-xl border border-fit-low/30 bg-fit-low/10 p-3 text-xs text-fit-low-light">
           {rejected.map((problem) => (
-            <li key={problem}>{problem}</li>
+            <li key={problem} className="flex items-start gap-2">
+              <IconAlert className="mt-px h-3.5 w-3.5 shrink-0" />
+              {problem}
+            </li>
           ))}
         </ul>
       )}
@@ -128,24 +134,28 @@ export function UploadZone({
           {files.map((file, index) => (
             <li
               key={`${file.name}-${file.size}`}
-              className="flex items-center justify-between gap-3 rounded-xl border border-line
-                bg-paper-sunken px-3.5 py-2.5 text-sm"
+              className="animate-fade flex items-center gap-3 rounded-xl border border-line
+                bg-paper-sunken px-3 py-2.5 text-sm"
             >
-              <span className="truncate" title={file.name}>
+              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-line bg-paper-raised text-ink-faint">
+                <IconFile className="h-4 w-4" />
+              </span>
+              <span className="min-w-0 flex-1 truncate" title={file.name}>
                 {file.name}
               </span>
-              <div className="flex shrink-0 items-center gap-3">
-                <span className="text-xs text-ink-muted">{formatSize(file.size)}</span>
-                <button
-                  type="button"
-                  onClick={() => removeFile(index)}
-                  disabled={disabled}
-                  className="text-ink-muted transition-colors hover:text-fit-low-light"
-                  aria-label={`Remove ${file.name}`}
-                >
-                  ✕
-                </button>
-              </div>
+              <span className="shrink-0 text-xs text-ink-faint tabular-nums">
+                {formatSize(file.size)}
+              </span>
+              <button
+                type="button"
+                onClick={() => removeFile(index)}
+                disabled={disabled}
+                className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-ink-muted
+                  transition-colors hover:bg-fit-low/15 hover:text-fit-low-light"
+                aria-label={`Remove ${file.name}`}
+              >
+                <IconX className="h-3.5 w-3.5" />
+              </button>
             </li>
           ))}
         </ul>

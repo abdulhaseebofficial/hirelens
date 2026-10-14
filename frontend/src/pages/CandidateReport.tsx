@@ -4,20 +4,60 @@ import { ApiError, saveBlob } from "@/api/client";
 import { analyses } from "@/api/endpoints";
 import { Markdown } from "@/components/Markdown";
 import { ScoreBadge, VerdictPill } from "@/components/ScoreBadge";
-import { Alert, Field, PageLoader, SkillPills, Spinner } from "@/components/ui";
+import {
+  IconAward,
+  IconBriefcase,
+  IconClipboard,
+  IconDownload,
+  IconGraduation,
+  IconLinkedin,
+  IconMail,
+  IconRefresh,
+  IconTarget,
+  IconUsers,
+} from "@/components/icons";
+import {
+  Alert,
+  Field,
+  PageLoader,
+  SegmentedTabs,
+  SkillPills,
+  Spinner,
+} from "@/components/ui";
 import type { CandidateDetail } from "@/types";
 
 type TabId = "fit" | "profile" | "kit";
 
-const TABS: Array<{ id: TabId; label: string }> = [
-  { id: "fit", label: "Fit score & evidence" },
-  { id: "profile", label: "Candidate snapshot" },
-  { id: "kit", label: "Interview kit" },
+const TABS = [
+  { id: "fit" as const, label: "Fit & evidence", icon: IconTarget },
+  { id: "profile" as const, label: "Snapshot", icon: IconUsers },
+  { id: "kit" as const, label: "Interview kit", icon: IconClipboard },
 ];
 
 /** Strip the '## FIT SCORE: n/100' heading — the badge already shows it. */
 function withoutScoreHeading(markdown: string) {
   return markdown.replace(/^##\s*FIT SCORE:.*\n?/i, "").trim();
+}
+
+/** Card with an icon'd heading, used throughout the snapshot tab. */
+function Panel({
+  title,
+  icon: Icon,
+  children,
+}: {
+  title: string;
+  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="card p-5">
+      <h3 className="mb-3 flex items-center gap-2">
+        <Icon className="h-4 w-4 text-coral-light" />
+        <span className="section-label">{title}</span>
+      </h3>
+      {children}
+    </div>
+  );
 }
 
 export function CandidateReport({
@@ -58,9 +98,7 @@ export function CandidateReport({
     try {
       setCandidate(await analyses.interviewKit(analysisId, candidateId, regenerate));
     } catch (err) {
-      setKitError(
-        err instanceof ApiError ? err.message : "Could not generate the interview kit.",
-      );
+      setKitError(err instanceof ApiError ? err.message : "Could not generate the interview kit.");
     } finally {
       setGenerating(false);
     }
@@ -106,45 +144,44 @@ export function CandidateReport({
 
   return (
     <div className="space-y-5">
-      <div role="tablist" aria-label="Candidate report" className="flex gap-1 border-b border-line">
-        {TABS.map((entry) => (
-          <button
-            key={entry.id}
-            type="button"
-            role="tab"
-            id={`tab-${entry.id}`}
-            aria-selected={tab === entry.id}
-            aria-controls={`panel-${entry.id}`}
-            onClick={() => setTab(entry.id)}
-            className={`rounded-t-xl px-4 py-2.5 text-sm font-semibold transition-colors ${
-              tab === entry.id
-                ? "bg-coral/15 text-coral-light"
-                : "text-ink-muted hover:text-ink"
-            }`}
-          >
-            {entry.label}
-          </button>
-        ))}
+      {/* Candidate header — carried across all three tabs so the score never
+          scrolls out of reach while reading the evidence. */}
+      <div className="card flex flex-col items-center gap-5 p-5 sm:flex-row sm:p-6">
+        <div className="flex flex-col items-center gap-2.5">
+          <ScoreBadge score={candidate.score} tier={candidate.tier} size="lg" />
+          <VerdictPill verdict={candidate.verdict} tier={candidate.tier} />
+        </div>
+        <div className="min-w-0 flex-1 text-center sm:text-left">
+          <h2 className="text-2xl break-words">{candidate.display_name}</h2>
+          <p className="mt-1 text-sm text-ink-muted">
+            {[snapshot?.current_role, snapshot?.current_company].filter(Boolean).join(" · ") ||
+              candidate.filename}
+          </p>
+          {snapshot && snapshot.skills.length > 0 && (
+            <div className="mt-3.5 flex justify-center sm:justify-start">
+              <SkillPills items={snapshot.skills} max={6} />
+            </div>
+          )}
+        </div>
       </div>
 
-      {tab === "fit" && (
-        <section role="tabpanel" id="panel-fit" aria-labelledby="tab-fit" className="space-y-4">
-          <div className="flex flex-col items-center gap-5 sm:flex-row sm:items-start">
-            <div className="flex flex-col items-center gap-2.5">
-              <ScoreBadge score={candidate.score} tier={candidate.tier} size="lg" />
-              <VerdictPill verdict={candidate.verdict} tier={candidate.tier} />
-            </div>
-            <div className="min-w-0 flex-1">
-              <h2 className="text-xl">{candidate.display_name}</h2>
-              <p className="mt-0.5 text-sm text-ink-muted">
-                {[snapshot?.current_role, snapshot?.current_company].filter(Boolean).join(" · ") ||
-                  candidate.filename}
-              </p>
-            </div>
-          </div>
+      <SegmentedTabs
+        tabs={TABS}
+        active={tab}
+        onChange={setTab}
+        idPrefix="candidate"
+        label="Candidate report"
+      />
 
+      {tab === "fit" && (
+        <section
+          role="tabpanel"
+          id="candidate-panel-fit"
+          aria-labelledby="candidate-tab-fit"
+          className="animate-fade"
+        >
           {candidate.fit_markdown ? (
-            <div className="card p-5">
+            <div className="card p-5 sm:p-6">
               <Markdown>{withoutScoreHeading(candidate.fit_markdown)}</Markdown>
             </div>
           ) : (
@@ -156,77 +193,87 @@ export function CandidateReport({
       {tab === "profile" && (
         <section
           role="tabpanel"
-          id="panel-profile"
-          aria-labelledby="tab-profile"
-          className="space-y-4"
+          id="candidate-panel-profile"
+          aria-labelledby="candidate-tab-profile"
+          className="animate-fade space-y-4"
         >
           {snapshot ? (
             <>
               <div className="grid gap-4 md:grid-cols-2">
-                <div className="card p-5">
-                  <h3 className="section-label mb-2">Contact</h3>
+                <Panel title="Contact" icon={IconMail}>
                   <Field label="Name" value={snapshot.name} />
-                  <Field label="Email" value={snapshot.email} />
+                  <Field label="Email" value={snapshot.email} icon={IconMail} />
                   <Field label="Phone" value={snapshot.phone} />
-                  <Field label="LinkedIn" value={snapshot.linkedin} />
+                  <Field label="LinkedIn" value={snapshot.linkedin} icon={IconLinkedin} />
+                </Panel>
 
-                  <h3 className="section-label mt-5 mb-2">Current position</h3>
+                <Panel title="Current position" icon={IconBriefcase}>
                   <Field label="Role" value={snapshot.current_role} />
                   <Field label="Company" value={snapshot.current_company} />
                   <Field
                     label="Experience"
                     value={snapshot.experience_years ? `${snapshot.experience_years} years` : null}
                   />
-                </div>
+                  <Field
+                    label="Languages"
+                    value={snapshot.languages.length > 0 ? snapshot.languages.join(", ") : null}
+                  />
+                </Panel>
+              </div>
 
-                <div className="card space-y-4 p-5">
-                  <div>
-                    <h3 className="section-label mb-2">Skills</h3>
-                    <SkillPills items={snapshot.skills} />
-                  </div>
-                  <div>
-                    <h3 className="section-label mb-2">Tools &amp; technologies</h3>
-                    <SkillPills items={snapshot.tools_technologies} />
-                  </div>
-                  <div>
-                    <h3 className="section-label mb-2">Education</h3>
-                    {snapshot.education.length > 0 ? (
-                      <ul className="space-y-1 text-sm text-ink-muted">
-                        {snapshot.education.map((entry, index) => (
-                          <li key={`${entry.degree}-${index}`}>
-                            {[entry.degree, entry.institution, entry.year]
-                              .filter(Boolean)
-                              .join(" · ")}
-                          </li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <span className="text-sm text-ink-faint">Not listed</span>
-                    )}
-                  </div>
-                </div>
+              <div className="grid gap-4 md:grid-cols-2">
+                <Panel title="Skills" icon={IconTarget}>
+                  <SkillPills items={snapshot.skills} />
+                  <h4 className="section-label mt-4 mb-2">Tools &amp; technologies</h4>
+                  <SkillPills items={snapshot.tools_technologies} />
+                </Panel>
+
+                <Panel title="Education" icon={IconGraduation}>
+                  {snapshot.education.length > 0 ? (
+                    <ul className="space-y-2.5 text-sm">
+                      {snapshot.education.map((entry, index) => (
+                        <li
+                          key={`${entry.degree}-${index}`}
+                          className="border-l-2 border-coral/40 pl-3"
+                        >
+                          <div className="font-medium text-ink">{entry.degree ?? "—"}</div>
+                          <div className="text-xs text-ink-muted">
+                            {[entry.institution, entry.year].filter(Boolean).join(" · ") || "—"}
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <span className="text-sm text-ink-faint">Not listed</span>
+                  )}
+                </Panel>
               </div>
 
               {snapshot.summary && (
-                <div className="card p-5">
-                  <h3 className="section-label mb-2">Summary</h3>
+                <Panel title="Summary" icon={IconClipboard}>
                   <p className="text-sm leading-relaxed text-ink">{snapshot.summary}</p>
-                </div>
+                </Panel>
               )}
 
               {snapshot.key_achievements.length > 0 && (
-                <div className="card p-5">
-                  <h3 className="section-label mb-2">Key achievements</h3>
-                  <ul className="list-disc space-y-1.5 pl-5 text-sm text-ink">
+                <Panel title="Key achievements" icon={IconAward}>
+                  <ul className="space-y-2 text-sm text-ink">
                     {snapshot.key_achievements.map((item) => (
-                      <li key={item}>{item}</li>
+                      <li key={item} className="flex gap-2.5">
+                        <span
+                          className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-coral"
+                          aria-hidden="true"
+                        />
+                        {item}
+                      </li>
                     ))}
                   </ul>
-                </div>
+                </Panel>
               )}
 
               <div className="flex flex-wrap gap-3">
                 <button type="button" onClick={downloadJson} className="btn-secondary text-xs">
+                  <IconDownload className="h-3.5 w-3.5" />
                   Download JSON
                 </button>
                 <button
@@ -234,6 +281,7 @@ export function CandidateReport({
                   onClick={downloadProfileCsv}
                   className="btn-secondary text-xs"
                 >
+                  <IconDownload className="h-3.5 w-3.5" />
                   Download CSV
                 </button>
               </div>
@@ -252,16 +300,22 @@ export function CandidateReport({
       )}
 
       {tab === "kit" && (
-        <section role="tabpanel" id="panel-kit" aria-labelledby="tab-kit" className="space-y-4">
+        <section
+          role="tabpanel"
+          id="candidate-panel-kit"
+          aria-labelledby="candidate-tab-kit"
+          className="animate-fade space-y-4"
+        >
           {kitError && <Alert>{kitError}</Alert>}
 
           {candidate.interview_kit ? (
             <>
-              <div className="card p-5">
+              <div className="card p-5 sm:p-6">
                 <Markdown>{candidate.interview_kit}</Markdown>
               </div>
               <div className="flex flex-wrap gap-3">
                 <button type="button" onClick={downloadKit} className="btn-secondary text-xs">
+                  <IconDownload className="h-3.5 w-3.5" />
                   Download kit
                 </button>
                 <button
@@ -270,14 +324,18 @@ export function CandidateReport({
                   disabled={generating}
                   className="btn-ghost text-xs"
                 >
+                  <IconRefresh className="h-3.5 w-3.5" />
                   {generating ? "Regenerating…" : "Regenerate"}
                 </button>
               </div>
             </>
           ) : (
-            <div className="card flex flex-col items-center gap-4 px-6 py-12 text-center">
+            <div className="card flex flex-col items-center gap-4 px-6 py-14 text-center">
+              <span className="grid h-14 w-14 place-items-center rounded-2xl border border-coral/25 bg-coral/12 text-coral-light">
+                <IconClipboard className="h-6 w-6" />
+              </span>
               <h3 className="text-lg">Interview kit not generated yet</h3>
-              <p className="max-w-md text-sm text-ink-muted">
+              <p className="max-w-md text-sm leading-relaxed text-ink-muted">
                 Six role-specific questions with answer rubrics, plus two clarification questions
                 for the gaps found above. Generated on demand so batch runs stay cheap.
               </p>

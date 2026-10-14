@@ -1,0 +1,29 @@
+# HireLens API — runtime dependencies (Python 3.11+)
+
+# Web framework
+fastapi>=0.115,<1.0
+uvicorn[standard]>=0.30,<1.0
+python-multipart>=0.0.9
+
+# Configuration & validation
+pydantic>=2.7,<3.0
+pydantic-settings>=2.3,<3.0
+email-validator>=2.1
+python-dotenv>=1.0
+
+# Database
+SQLAlchemy[asyncio]>=2.0.30,<3.0
+aiosqlite>=0.20
+alembic>=1.13
+
+# Auth
+PyJWT[crypto]>=2.8
+bcrypt>=4.1
+
+# AI + PDF
+google-genai>=1.0
+PyPDF2>=3.0.1
+
+# PostgreSQL driver. Required whenever DATABASE_URL points at Postgres, which
+# every managed deployment does; harmless on a SQLite dev machine.
+asyncpg>=0.29

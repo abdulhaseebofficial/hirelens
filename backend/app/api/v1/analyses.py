@@ -11,11 +11,13 @@ from fastapi import (
     Depends,
     File,
     Form,
+    Header,
     Query,
     Response,
     UploadFile,
     status,
 )
+from pydantic import BaseModel, Field
 
 from app.api.deps import CurrentUser, DbSession, PageParams, enforce_analysis_rate_limit
 from app.core.config import settings
@@ -71,6 +73,24 @@ def _detail(analysis) -> AnalysisDetail:
     )
 
 
+class VerifyKeyRequest(BaseModel):
+    api_key: str = Field(..., min_length=1, description="Google Gemini API key")
+
+
+class VerifyKeyResponse(BaseModel):
+    valid: bool
+    message: str
+
+
+@router.post("/verify-key", response_model=VerifyKeyResponse)
+async def verify_key(
+    payload: VerifyKeyRequest,
+) -> VerifyKeyResponse:
+    """Verify if the provided Gemini API key is valid and working."""
+    valid, message = await gemini.verify_api_key(payload.api_key)
+    return VerifyKeyResponse(valid=valid, message=message)
+
+
 @router.post(
     "",
     response_model=AnalysisCreateResponse,
@@ -84,14 +104,17 @@ async def create_analysis(
     job_description: Annotated[str, Form(description="Full job description text")],
     files: Annotated[list[UploadFile], File(description="One or more CV PDFs")],
     title: Annotated[str | None, Form(description="Label for this batch")] = None,
+    api_key: Annotated[str | None, Form(description="User-provided Google Gemini API key")] = None,
+    x_gemini_api_key: Annotated[str | None, Header(alias="x-gemini-api-key")] = None,
 ) -> AnalysisCreateResponse:
     """Upload CVs against a job description and start the analysis.
 
     Returns 202 immediately; poll GET /analyses/{id} for progress.
     """
-    if not gemini_available():
+    effective_key = (api_key or x_gemini_api_key or "").strip() or None
+    if not gemini_available(effective_key):
         raise ConflictError(
-            f"The analysis service is not configured. {gemini.API_KEY_HELP}",
+            f"The analysis service is not configured. Please enter your Google Gemini API key. {gemini.API_KEY_HELP}",
             code="gemini_not_configured",
         )
 
@@ -134,7 +157,7 @@ async def create_analysis(
         uploads=uploads,
     )
 
-    background.add_task(runner.run_analysis, analysis.id)
+    background.add_task(runner.run_analysis, analysis.id, api_key=effective_key)
     logger.info("Queued analysis %s with %d file(s)", analysis.id, len(uploads))
 
     return AnalysisCreateResponse(
@@ -145,8 +168,8 @@ async def create_analysis(
     )
 
 
-def gemini_available() -> bool:
-    return settings.gemini_configured
+def gemini_available(api_key: str | None = None) -> bool:
+    return settings.gemini_configured or bool(api_key and api_key.strip())
 
 
 def _default_title(uploads: list[tuple[str, str | None, str | None]]) -> str:
@@ -241,6 +264,7 @@ async def generate_interview_kit(
     user: CurrentUser,
     db: DbSession,
     regenerate: Annotated[bool, Query(description="Replace an existing kit")] = False,
+    x_gemini_api_key: Annotated[str | None, Header(alias="x-gemini-api-key")] = None,
 ) -> CandidateDetail:
     """Generate the interview kit on demand — it is the most expensive call,
     so it is not part of the batch run."""
@@ -260,6 +284,7 @@ async def generate_interview_kit(
             truncate(analysis.job_description, settings.max_jd_chars),
         ),
         purpose="interview-kit",
+        api_key=(x_gemini_api_key or "").strip() or None,
     )
     await db.commit()
     await db.refresh(candidate)

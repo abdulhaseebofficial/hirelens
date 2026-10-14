@@ -52,7 +52,7 @@ def stub_gemini(monkeypatch):
     """Answer by prompt shape, so no test ever calls the real API."""
     calls: list[str] = []
 
-    async def fake_generate(prompt: str, *, purpose: str = "generation") -> str:
+    async def fake_generate(prompt: str, *, purpose: str = "generation", **kwargs) -> str:
         calls.append(purpose)
         await asyncio.sleep(0)
         if purpose == "fit-score":
@@ -187,6 +187,39 @@ class TestAnalysisLifecycle:
 
         assert (await auth_client.delete(f"/api/v1/analyses/{analysis_id}")).status_code == 204
         assert (await auth_client.get(f"/api/v1/analyses/{analysis_id}")).status_code == 404
+
+    async def test_create_analysis_with_custom_api_key(self, auth_client: AsyncClient):
+        response = await auth_client.post(
+            "/api/v1/analyses",
+            data={"job_description": JD, "title": "Custom Key Run", "api_key": "AIzaSyTestKey123"},
+            files=[upload()],
+        )
+        assert response.status_code == 202
+        analysis_id = response.json()["id"]
+        finished = await wait_for_completion(auth_client, analysis_id)
+        assert finished["status"] == "completed"
+
+    async def test_verify_key_endpoint(self, auth_client: AsyncClient, monkeypatch):
+        async def fake_verify(api_key: str):
+            if api_key == "valid-key":
+                return True, "Key is valid."
+            return False, "Invalid key."
+
+        monkeypatch.setattr(gemini, "verify_api_key", fake_verify)
+
+        res_valid = await auth_client.post(
+            "/api/v1/analyses/verify-key",
+            json={"api_key": "valid-key"},
+        )
+        assert res_valid.status_code == 200
+        assert res_valid.json()["valid"] is True
+
+        res_invalid = await auth_client.post(
+            "/api/v1/analyses/verify-key",
+            json={"api_key": "bad-key"},
+        )
+        assert res_invalid.status_code == 200
+        assert res_invalid.json()["valid"] is False
 
 
 class TestCandidateEndpoints:

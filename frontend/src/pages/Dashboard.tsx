@@ -1,9 +1,27 @@
-import { useCallback, useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 
 import { ApiError } from "@/api/client";
 import { analyses } from "@/api/endpoints";
-import { Alert, EmptyState, PageLoader, ProgressBar, StatusChip } from "@/components/ui";
+import {
+  IconArrowRight,
+  IconChevronLeft,
+  IconChevronRight,
+  IconPlus,
+  IconSearch,
+  IconTarget,
+  IconTrash,
+  IconUsers,
+} from "@/components/icons";
+import {
+  Alert,
+  CardSkeletonGrid,
+  EmptyState,
+  PageHeader,
+  ProgressBar,
+  StatTile,
+  StatusChip,
+} from "@/components/ui";
 import type { AnalysisSummary, Page } from "@/types";
 
 const PAGE_SIZE = 12;
@@ -16,7 +34,6 @@ function formatDate(iso: string) {
 }
 
 export function Dashboard() {
-  const navigate = useNavigate();
   const [page, setPage] = useState<Page<AnalysisSummary> | null>(null);
   const [offset, setOffset] = useState(0);
   const [search, setSearch] = useState("");
@@ -51,6 +68,16 @@ export function Dashboard() {
     return () => window.clearInterval(timer);
   }, [hasActiveRun, load]);
 
+  // Summary across the page in view. The API paginates, so this is honestly
+  // labelled as "on this page" rather than presented as an all-time total.
+  const stats = useMemo(() => {
+    const items = page?.items ?? [];
+    const cvs = items.reduce((sum, item) => sum + item.candidate_count, 0);
+    const scores = items.map((item) => item.top_score).filter((s): s is number => s !== null);
+    const best = scores.length > 0 ? Math.max(...scores) : null;
+    return { runs: page?.total ?? 0, cvs, best };
+  }, [page]);
+
   const handleDelete = async (analysis: AnalysisSummary) => {
     if (!window.confirm(`Delete "${analysis.title}" and all of its candidates?`)) return;
     setDeletingId(analysis.id);
@@ -64,20 +91,38 @@ export function Dashboard() {
     }
   };
 
-  return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <p className="eyebrow">Screening history</p>
-          <h1 className="text-2xl">Your analyses</h1>
-        </div>
-        <Link to="/new" className="btn-primary">
-          New analysis
-        </Link>
-      </div>
+  const isEmpty = page && page.items.length === 0;
 
-      <label className="block">
+  return (
+    <div className="space-y-7">
+      <PageHeader
+        eyebrow="Screening history"
+        title="Your analyses"
+        description="Every batch you have run, with its ranking kept intact so you can revisit a shortlist later."
+        actions={
+          <Link to="/new" className="btn-primary">
+            <IconPlus className="h-4 w-4" />
+            New analysis
+          </Link>
+        }
+      />
+
+      {page && page.items.length > 0 && (
+        <div className="grid gap-4 sm:grid-cols-3">
+          <StatTile icon={IconTarget} label="Analyses" value={stats.runs} hint="All time" />
+          <StatTile icon={IconUsers} label="CVs on this page" value={stats.cvs} />
+          <StatTile
+            icon={IconTarget}
+            label="Best fit score"
+            value={stats.best ?? "—"}
+            hint={stats.best === null ? "No completed run yet" : "Across this page"}
+          />
+        </div>
+      )}
+
+      <label className="relative block max-w-sm">
         <span className="sr-only">Search analyses by title</span>
+        <IconSearch className="pointer-events-none absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-ink-faint" />
         <input
           type="search"
           value={search}
@@ -86,25 +131,26 @@ export function Dashboard() {
             setOffset(0);
           }}
           placeholder="Search by title…"
-          className="input max-w-sm"
+          className="input pl-10"
         />
       </label>
 
       {error && <Alert>{error}</Alert>}
 
       {loading && !page ? (
-        <PageLoader label="Loading your analyses…" />
-      ) : page && page.items.length === 0 ? (
+        <CardSkeletonGrid />
+      ) : isEmpty ? (
         <EmptyState
           title={search ? "No matching analyses" : "No analyses yet"}
           description={
             search
-              ? "Try a different search term."
+              ? "Try a different search term, or clear the box to see everything."
               : "Upload a batch of CVs with a job description and HireLens will score, profile, and rank them."
           }
           action={
             !search && (
               <Link to="/new" className="btn-primary mt-2">
+                <IconPlus className="h-4 w-4" />
                 Run your first analysis
               </Link>
             )
@@ -112,24 +158,30 @@ export function Dashboard() {
         />
       ) : (
         <>
-          <ul className="grid gap-3 sm:grid-cols-2">
-            {page?.items.map((analysis) => {
+          <ul className="grid gap-4 sm:grid-cols-2">
+            {page?.items.map((analysis, index) => {
               const running = analysis.status === "pending" || analysis.status === "running";
               return (
-                <li key={analysis.id} className="card flex flex-col gap-3 p-4">
+                <li
+                  key={analysis.id}
+                  className="card-interactive animate-rise group relative flex flex-col gap-4 p-5"
+                  style={{ animationDelay: `${Math.min(index, 8) * 40}ms` }}
+                >
                   <div className="flex items-start justify-between gap-3">
-                    <button
-                      type="button"
-                      onClick={() => navigate(`/analyses/${analysis.id}`)}
-                      className="text-left"
-                    >
-                      <span className="font-serif text-base font-semibold hover:text-coral-light">
+                    <div className="min-w-0">
+                      {/* Stretched link: the whole card is the target, while the
+                          buttons below sit above it on the z-axis. */}
+                      <Link
+                        to={`/analyses/${analysis.id}`}
+                        className="font-serif text-base font-semibold transition-colors before:absolute
+                          before:inset-0 before:rounded-card before:content-[''] group-hover:text-coral-light"
+                      >
                         {analysis.title}
-                      </span>
-                      <span className="mt-0.5 block text-xs text-ink-faint">
+                      </Link>
+                      <span className="mt-1 block text-xs text-ink-faint">
                         {formatDate(analysis.created_at)}
                       </span>
-                    </button>
+                    </div>
                     <StatusChip status={analysis.status} />
                   </div>
 
@@ -139,17 +191,17 @@ export function Dashboard() {
                       label={`${analysis.completed_count} of ${analysis.candidate_count} analyzed`}
                     />
                   ) : (
-                    <div className="flex items-baseline gap-4 text-sm text-ink-muted">
-                      <span>
-                        <strong className="font-serif text-lg text-ink">
+                    <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-ink-muted">
+                      <span className="inline-flex items-baseline gap-1.5">
+                        <strong className="font-serif text-xl text-ink tabular-nums">
                           {analysis.candidate_count}
-                        </strong>{" "}
+                        </strong>
                         CV{analysis.candidate_count === 1 ? "" : "s"}
                       </span>
                       {analysis.top_score !== null && (
-                        <span>
-                          Top score{" "}
-                          <strong className="font-serif text-lg text-coral-light">
+                        <span className="inline-flex items-baseline gap-1.5">
+                          Top score
+                          <strong className="font-serif text-xl text-coral-light tabular-nums">
                             {analysis.top_score}
                           </strong>
                         </span>
@@ -161,16 +213,23 @@ export function Dashboard() {
                     <p className="text-xs text-fit-low-light">{analysis.error}</p>
                   )}
 
-                  <div className="mt-auto flex gap-2 pt-1">
-                    <Link to={`/analyses/${analysis.id}`} className="btn-secondary py-1.5 text-xs">
+                  <div className="relative z-10 mt-auto flex items-center gap-2 pt-1">
+                    <Link
+                      to={`/analyses/${analysis.id}`}
+                      className="btn-secondary py-1.5 text-xs"
+                      tabIndex={-1}
+                    >
                       Open
+                      <IconArrowRight className="h-3.5 w-3.5" />
                     </Link>
                     <button
                       type="button"
                       onClick={() => handleDelete(analysis)}
                       disabled={deletingId === analysis.id}
-                      className="btn-ghost py-1.5 text-xs hover:text-fit-low-light"
+                      className="btn-danger-ghost ml-auto py-1.5 text-xs"
+                      aria-label={`Delete ${analysis.title}`}
                     >
+                      <IconTrash className="h-3.5 w-3.5" />
                       {deletingId === analysis.id ? "Deleting…" : "Delete"}
                     </button>
                   </div>
@@ -180,16 +239,20 @@ export function Dashboard() {
           </ul>
 
           {page && page.total > PAGE_SIZE && (
-            <nav className="flex items-center justify-between gap-4" aria-label="Pagination">
+            <nav
+              className="card flex items-center justify-between gap-4 px-4 py-3"
+              aria-label="Pagination"
+            >
               <button
                 type="button"
                 className="btn-secondary py-1.5 text-xs"
                 disabled={offset === 0}
                 onClick={() => setOffset(Math.max(0, offset - PAGE_SIZE))}
               >
+                <IconChevronLeft className="h-3.5 w-3.5" />
                 Previous
               </button>
-              <span className="text-xs text-ink-muted">
+              <span className="text-xs text-ink-muted tabular-nums">
                 {offset + 1}–{Math.min(offset + PAGE_SIZE, page.total)} of {page.total}
               </span>
               <button
@@ -199,6 +262,7 @@ export function Dashboard() {
                 onClick={() => setOffset(offset + PAGE_SIZE)}
               >
                 Next
+                <IconChevronRight className="h-3.5 w-3.5" />
               </button>
             </nav>
           )}

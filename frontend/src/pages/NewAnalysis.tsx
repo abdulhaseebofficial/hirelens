@@ -1,13 +1,51 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState, type ReactNode, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { ApiError } from "@/api/client";
+import { ApiError, apiKeyStore } from "@/api/client";
 import { analyses, system } from "@/api/endpoints";
+import { ApiKeySection } from "@/components/ApiKeySection";
 import { UploadZone } from "@/components/UploadZone";
-import { Alert } from "@/components/ui";
+import { IconCheck, IconSparkles } from "@/components/icons";
+import { Alert, PageHeader } from "@/components/ui";
 import type { PublicConfig } from "@/types";
 
 const MIN_JD_LENGTH = 50;
+
+/** Numbered step heading that ticks over to a checkmark once satisfied. */
+function Step({
+  index,
+  title,
+  hint,
+  done,
+  children,
+}: {
+  index: number;
+  title: string;
+  hint?: string;
+  done: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <section className="flex flex-col gap-3">
+      <div className="flex items-center gap-2.5">
+        <span
+          className={`grid h-6 w-6 shrink-0 place-items-center rounded-full text-[0.7rem] font-bold
+            transition-colors duration-300 ${
+              done
+                ? "bg-fit-high text-white"
+                : "border border-line-strong bg-paper-sunken text-ink-muted"
+            }`}
+          aria-hidden="true"
+        >
+          {done ? <IconCheck className="h-3.5 w-3.5" /> : index}
+        </span>
+        <h2 className="text-[0.7rem] font-bold tracking-[0.1em] text-ink uppercase">{title}</h2>
+        {hint && <span className="text-xs text-ink-faint">{hint}</span>}
+      </div>
+      {children}
+    </section>
+  );
+}
 
 export function NewAnalysis() {
   const navigate = useNavigate();
@@ -17,6 +55,7 @@ export function NewAnalysis() {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [config, setConfig] = useState<PublicConfig | null>(null);
+  const [hasUserKey, setHasUserKey] = useState(() => Boolean(apiKeyStore.key));
 
   useEffect(() => {
     system
@@ -27,7 +66,9 @@ export function NewAnalysis() {
 
   const jdLength = jobDescription.trim().length;
   const jdTooShort = jdLength > 0 && jdLength < MIN_JD_LENGTH;
-  const canSubmit = files.length > 0 && jdLength >= MIN_JD_LENGTH && !submitting;
+  const jdReady = jdLength >= MIN_JD_LENGTH;
+  const keyReady = Boolean(config?.gemini_configured || hasUserKey);
+  const canSubmit = files.length > 0 && jdReady && keyReady && !submitting;
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
@@ -45,34 +86,31 @@ export function NewAnalysis() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <div>
-        <p className="eyebrow">Step by step</p>
-        <h1 className="text-2xl">New analysis</h1>
-        <p className="mt-1 text-sm text-ink-muted">
-          Upload CVs and paste the job description. HireLens scores each candidate, extracts a
-          structured profile, and ranks the batch.
-        </p>
-      </div>
+    <form onSubmit={handleSubmit} className="space-y-7">
+      <PageHeader
+        eyebrow="AI Screening"
+        title="New analysis"
+        description="Upload CVs and paste the job description. HireLens scores each candidate, extracts a structured profile, and ranks the batch using Google Gemini."
+      />
 
       {error && <Alert>{error}</Alert>}
 
-      {config && !config.gemini_configured && (
-        <Alert tone="warning">
-          The server has no Gemini API key configured, so analysis will be refused. Set
-          <code className="mx-1 rounded bg-paper-sunken px-1.5 py-0.5">GOOGLE_API_KEY</code>
-          in <code className="rounded bg-paper-sunken px-1.5 py-0.5">backend/.env</code> and restart
-          it.
-        </Alert>
-      )}
+      <ApiKeySection
+        serverConfigured={config?.gemini_configured}
+        onKeyChange={(hasKey) => setHasUserKey(hasKey)}
+      />
 
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Both columns are flex columns so the upload zone can stretch to the
             height of the job-description box beside it. Left as blocks, the
             shorter column left a large hole under the drop target and pushed
-            Step 3 far down the page. */}
-        <section className="flex flex-col gap-3">
-          <h2 className="section-label">Step 1 · Candidate CVs</h2>
+            step 3 far down the page. */}
+        <Step
+          index={1}
+          title="Candidate CVs"
+          hint={files.length > 0 ? `${files.length} selected` : undefined}
+          done={files.length > 0}
+        >
           <div className="flex flex-1 flex-col">
             <UploadZone
               files={files}
@@ -82,16 +120,20 @@ export function NewAnalysis() {
               disabled={submitting}
             />
           </div>
-        </section>
+        </Step>
 
-        <section className="flex flex-col gap-3">
-          <h2 className="section-label">Step 2 · Job description</h2>
+        <Step
+          index={2}
+          title="Job description"
+          hint={jdLength > 0 ? `${jdLength} characters` : undefined}
+          done={jdReady}
+        >
           <textarea
             value={jobDescription}
             onChange={(event) => setJobDescription(event.target.value)}
             disabled={submitting}
             rows={12}
-            className="input resize-y font-sans"
+            className="input flex-1 resize-y font-sans leading-relaxed"
             placeholder={
               "Paste the full job description here.\n\nExample:\nWe are looking for a Software Engineer with 3+ years of Python experience…"
             }
@@ -105,13 +147,10 @@ export function NewAnalysis() {
               ? `At least ${MIN_JD_LENGTH} characters — currently ${jdLength}.`
               : "A complete JD, including requirements, gives noticeably better matching."}
           </p>
-        </section>
+        </Step>
       </div>
 
-      <section className="space-y-3">
-        <label htmlFor="title" className="section-label block">
-          Step 3 · Label this batch (optional)
-        </label>
+      <Step index={3} title="Label this batch" hint="Optional" done={title.trim().length > 0}>
         <input
           id="title"
           type="text"
@@ -120,19 +159,25 @@ export function NewAnalysis() {
           disabled={submitting}
           className="input max-w-md"
           placeholder="e.g. Senior Backend Engineer — Q3"
+          aria-label="Batch label"
         />
-      </section>
+      </Step>
 
-      <div className="flex flex-wrap items-center gap-4 border-t border-line pt-5">
+      <div className="card flex flex-wrap items-center gap-4 p-5">
         <button type="submit" className="btn-primary" disabled={!canSubmit}>
-          {submitting ? "Starting…" : `Analyze ${files.length || ""} CV${files.length === 1 ? "" : "s"}`.trim()}
+          <IconSparkles className="h-4 w-4" />
+          {submitting
+            ? "Starting…"
+            : `Analyze ${files.length || ""} CV${files.length === 1 ? "" : "s"}`.trim()}
         </button>
         <p className="text-xs text-ink-muted">
-          {files.length === 0
-            ? "Upload at least one CV to continue."
-            : jdLength < MIN_JD_LENGTH
-              ? "Paste a job description to continue."
-              : `${files.length} CV${files.length === 1 ? "" : "s"} ready.`}
+          {!keyReady
+            ? "Enter your Google Gemini API key above to continue."
+            : files.length === 0
+              ? "Upload at least one CV to continue."
+              : !jdReady
+                ? "Paste a job description to continue."
+                : `${files.length} CV${files.length === 1 ? "" : "s"} ready — this usually takes under a minute per CV.`}
         </p>
       </div>
     </form>

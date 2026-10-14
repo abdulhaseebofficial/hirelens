@@ -1,11 +1,24 @@
+import { Avatar, StatusChip } from "@/components/ui";
 import type { CandidateSummary, FitTier } from "@/types";
-import { StatusChip } from "@/components/ui";
 
 const BAR_COLOR: Record<FitTier, string> = {
-  high: "bg-fit-high-light",
+  high: "bg-fit-high",
   mid: "bg-coral",
-  low: "bg-fit-low-light",
+  low: "bg-fit-low",
 };
+
+const SCORE_TEXT: Record<FitTier, string> = {
+  high: "text-fit-high-light",
+  mid: "text-coral-light",
+  low: "text-fit-low-light",
+};
+
+/** Podium tint for the top three; everyone else gets a plain rank number. */
+const RANK_STYLE = [
+  "border-fit-mid/40 bg-fit-mid/15 text-fit-mid-light",
+  "border-line-strong bg-paper-hover text-ink",
+  "border-coral/30 bg-coral/12 text-coral-light",
+];
 
 interface CandidateTableProps {
   candidates: CandidateSummary[];
@@ -18,23 +31,23 @@ export function CandidateTable({ candidates, selectedId, onSelect }: CandidateTa
     <div className="card overflow-hidden">
       {/* Horizontal scroll is contained here so the page itself never scrolls sideways. */}
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[720px] border-collapse text-sm">
+        <table className="w-full min-w-[760px] border-collapse text-sm">
           <caption className="sr-only">Candidates ranked by fit score</caption>
           <thead>
-            <tr className="border-b border-line text-left">
-              <th scope="col" className="w-14 px-4 py-3 section-label">
-                #
+            <tr className="border-b border-line bg-paper-sunken/60 text-left">
+              <th scope="col" className="section-label w-16 px-4 py-3">
+                Rank
               </th>
-              <th scope="col" className="px-4 py-3 section-label">
+              <th scope="col" className="section-label px-4 py-3">
                 Candidate
               </th>
-              <th scope="col" className="w-44 px-4 py-3 section-label">
-                Score
+              <th scope="col" className="section-label w-48 px-4 py-3">
+                Fit score
               </th>
-              <th scope="col" className="w-36 px-4 py-3 section-label">
+              <th scope="col" className="section-label w-36 px-4 py-3">
                 Verdict
               </th>
-              <th scope="col" className="px-4 py-3 section-label">
+              <th scope="col" className="section-label px-4 py-3">
                 Current role
               </th>
             </tr>
@@ -43,6 +56,7 @@ export function CandidateTable({ candidates, selectedId, onSelect }: CandidateTa
             {candidates.map((candidate, index) => {
               const selected = candidate.id === selectedId;
               const failed = candidate.status === "failed";
+              const tier = candidate.tier ?? "mid";
 
               return (
                 <tr
@@ -57,13 +71,33 @@ export function CandidateTable({ candidates, selectedId, onSelect }: CandidateTa
                   tabIndex={0}
                   aria-current={selected}
                   className={`cursor-pointer border-b border-line/60 transition-colors last:border-0
-                    ${selected ? "bg-coral/12" : "hover:bg-paper-sunken/70"}`}
+                    ${
+                      selected
+                        ? "bg-coral/12 shadow-[inset_3px_0_0_0_var(--color-coral)]"
+                        : "hover:bg-paper-hover/70"
+                    }`}
                 >
-                  <td className="px-4 py-3 font-serif text-ink-muted">{index + 1}</td>
                   <td className="px-4 py-3">
-                    <div className="font-semibold text-ink">{candidate.display_name}</div>
-                    <div className="truncate text-xs text-ink-muted" title={candidate.filename}>
-                      {candidate.email ?? candidate.filename}
+                    <span
+                      className={`grid h-7 w-7 place-items-center rounded-lg border font-serif
+                        text-xs font-bold tabular-nums ${
+                          RANK_STYLE[index] ?? "border-line bg-paper-sunken text-ink-muted"
+                        }`}
+                    >
+                      {index + 1}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-3">
+                      <Avatar name={candidate.display_name} className="h-8 w-8 text-[0.65rem]" />
+                      <div className="min-w-0">
+                        <div className="truncate font-semibold text-ink">
+                          {candidate.display_name}
+                        </div>
+                        <div className="truncate text-xs text-ink-faint" title={candidate.filename}>
+                          {candidate.email ?? candidate.filename}
+                        </div>
+                      </div>
                     </div>
                   </td>
                   <td className="px-4 py-3">
@@ -72,14 +106,14 @@ export function CandidateTable({ candidates, selectedId, onSelect }: CandidateTa
                     ) : candidate.score === null ? (
                       <span className="text-ink-faint">—</span>
                     ) : (
-                      <div className="flex items-center gap-2.5">
-                        <div className="h-1.5 w-20 overflow-hidden rounded-full bg-paper-sunken">
+                      <div className="flex items-center gap-3">
+                        <div className="h-1.5 w-24 overflow-hidden rounded-full bg-paper-sunken ring-1 ring-line">
                           <div
-                            className={`h-full rounded-full ${BAR_COLOR[candidate.tier ?? "mid"]}`}
+                            className={`h-full rounded-full transition-[width] duration-700 ${BAR_COLOR[tier]}`}
                             style={{ width: `${candidate.score}%` }}
                           />
                         </div>
-                        <span className="font-serif font-semibold tabular-nums">
+                        <span className={`font-serif font-bold tabular-nums ${SCORE_TEXT[tier]}`}>
                           {candidate.score}
                         </span>
                       </div>

@@ -1,6 +1,6 @@
 /** One function per API endpoint, so components never build URLs by hand. */
 
-import { request, requestBlob } from "@/api/client";
+import { apiKeyStore, request, requestBlob } from "@/api/client";
 import type {
   AnalysisCreateResponse,
   AnalysisDetail,
@@ -46,14 +46,22 @@ export const auth = {
 };
 
 export const analyses = {
-  create: (jobDescription: string, files: File[], title?: string) => {
+  create: (jobDescription: string, files: File[], title?: string, apiKey?: string) => {
     const form = new FormData();
     form.append("job_description", jobDescription);
     if (title?.trim()) form.append("title", title.trim());
+    const keyToSend = apiKey?.trim() || apiKeyStore.key;
+    if (keyToSend) form.append("api_key", keyToSend);
     for (const file of files) form.append("files", file, file.name);
 
     return request<AnalysisCreateResponse>("/analyses", { method: "POST", body: form });
   },
+
+  verifyKey: (apiKey: string) =>
+    request<{ valid: boolean; message: string }>("/analyses/verify-key", {
+      method: "POST",
+      body: { api_key: apiKey },
+    }),
 
   list: (params: { limit?: number; offset?: number; status?: AnalysisStatus; search?: string } = {}) => {
     const query = new URLSearchParams();

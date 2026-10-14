@@ -1,11 +1,37 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
-import { ApiError } from "@/api/client";
+import { isApiError } from "@/api/client";
 import { system } from "@/api/endpoints";
 import { Alert } from "@/components/ui";
 import { AuthShell } from "@/pages/Login";
 import { useAuth } from "@/hooks/useAuth";
+
+/**
+ * Local, advisory strength read-out. The backend is still the authority on
+ * what it accepts; this only tells the user where they stand before they
+ * submit.
+ */
+function scorePassword(password: string, minLength: number) {
+  if (!password) return { level: 0, label: "", tone: "" };
+
+  let level = 0;
+  if (password.length >= minLength) level += 1;
+  if (password.length >= minLength + 4) level += 1;
+  if (/[0-9]/.test(password) && /[a-zA-Z]/.test(password)) level += 1;
+  if (/[^a-zA-Z0-9]/.test(password)) level += 1;
+
+  const labels = ["Too short", "Weak", "Fair", "Good", "Strong"] as const;
+  const tones = [
+    "bg-fit-low",
+    "bg-fit-low",
+    "bg-fit-mid",
+    "bg-fit-high",
+    "bg-fit-high",
+  ] as const;
+
+  return { level, label: labels[level], tone: tones[level] };
+}
 
 export function Register() {
   const { register } = useAuth();
@@ -26,6 +52,8 @@ export function Register() {
       .catch(() => undefined);
   }, []);
 
+  const strength = useMemo(() => scorePassword(password, minLength), [password, minLength]);
+
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
     setSubmitting(true);
@@ -35,8 +63,10 @@ export function Register() {
       await register(email, password, fullName);
       navigate("/", { replace: true });
     } catch (err) {
-      if (err instanceof ApiError) {
+      if (isApiError(err)) {
         setFieldErrors(err.fieldErrors);
+        setError(err.message);
+      } else if (err instanceof Error && err.message) {
         setError(err.message);
       } else {
         setError("Could not reach the server.");
@@ -49,7 +79,7 @@ export function Register() {
   return (
     <AuthShell
       title="Create an account"
-      subtitle="Screen candidates against a job description in minutes"
+      subtitle="Screen candidates against a job description in minutes."
       footer={
         <>
           Already registered?{" "}
@@ -114,6 +144,25 @@ export function Register() {
             placeholder="••••••••••"
             aria-describedby="password-hint"
           />
+
+          {password && (
+            <div className="flex items-center gap-2 pt-0.5">
+              <div className="flex flex-1 gap-1" aria-hidden="true">
+                {[1, 2, 3, 4].map((step) => (
+                  <span
+                    key={step}
+                    className={`h-1 flex-1 rounded-full transition-colors duration-300 ${
+                      step <= strength.level ? strength.tone : "bg-paper-hover"
+                    }`}
+                  />
+                ))}
+              </div>
+              <span className="w-16 shrink-0 text-right text-[0.7rem] font-semibold text-ink-muted">
+                {strength.label}
+              </span>
+            </div>
+          )}
+
           <p
             id="password-hint"
             className={`text-xs ${fieldErrors.password ? "text-fit-low-light" : "text-ink-faint"}`}

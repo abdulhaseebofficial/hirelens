@@ -1,105 +1,307 @@
 @import "tailwindcss";
 
-/* ---------------------------------------------------------------------------
-   Design tokens — the HireLens palette, carried over from the Streamlit app.
-   Defined via @theme so they are available as Tailwind utilities
-   (bg-paper, text-ink, border-line, ...).
---------------------------------------------------------------------------- */
+/* ===========================================================================
+   HireLens design system.
+
+   Every colour is a CSS variable, so the light theme is a matter of
+   re-declaring the same names under `:root[data-theme="light"]` further down.
+   Tailwind compiles `bg-paper` to `var(--color-paper)`, so that swap reaches
+   every utility without a single `dark:` prefix in the components.
+
+   The `-light` variants are the ones components use for *text on a surface*.
+   They get lighter in the dark theme and darker in the light theme, which is
+   why the light block below reads as inverted: the name tracks the role, not
+   the luminance.
+   =========================================================================== */
+
 @theme {
-  --color-paper: #262624;
-  --color-paper-raised: #30302e;
-  --color-paper-sunken: #1e1e1c;
-  --color-ink: #f0eee6;
-  --color-ink-muted: #a8a6a0;
-  --color-ink-faint: #7a7873;
-  --color-coral: #cc785c;
-  --color-coral-light: #e0916f;
-  --color-coral-dark: #a85c43;
-  --color-line: rgba(240, 238, 230, 0.14);
-  --color-line-strong: rgba(240, 238, 230, 0.28);
+  /* -- Surfaces ------------------------------------------------------------ */
+  --color-paper: #0c0d11;
+  --color-paper-raised: #151720;
+  --color-paper-hover: #1c1f2a;
+  --color-paper-sunken: #08090c;
 
-  --color-fit-high: #5c7a50;
-  --color-fit-high-light: #7a9a6d;
-  --color-fit-mid: #cc785c;
-  --color-fit-mid-light: #e0916f;
-  --color-fit-low: #9a4234;
-  --color-fit-low-light: #c1594a;
+  /* -- Text ---------------------------------------------------------------- */
+  --color-ink: #f3f4f8;
+  --color-ink-muted: #a0a6b8;
+  --color-ink-faint: #6c7183;
 
+  /* -- Hairlines ----------------------------------------------------------- */
+  --color-line: rgba(243, 244, 248, 0.09);
+  --color-line-strong: rgba(243, 244, 248, 0.2);
+
+  /* -- Brand --------------------------------------------------------------- */
+  --color-coral: #ea7350;
+  --color-coral-light: #ff9b76;
+  --color-coral-dark: #b95633;
+  --color-violet: #7b6bf2;
+  --color-violet-light: #9f92ff;
+
+  /* -- Fit tiers ----------------------------------------------------------- */
+  --color-fit-high: #3d9a68;
+  --color-fit-high-light: #5fc78a;
+  --color-fit-mid: #d68a33;
+  --color-fit-mid-light: #f0a94f;
+  --color-fit-low: #c0453c;
+  --color-fit-low-light: #e3695f;
+
+  /* -- Type ---------------------------------------------------------------- */
   --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
   --font-serif: "Source Serif 4", Georgia, "Times New Roman", serif;
 
-  --radius-card: 16px;
+  /* -- Shape --------------------------------------------------------------- */
+  --radius-card: 18px;
+
+  /* -- Elevation ----------------------------------------------------------- */
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4), 0 10px 30px -18px rgba(0, 0, 0, 0.8);
+  --shadow-lift: 0 2px 4px rgba(0, 0, 0, 0.4), 0 18px 44px -20px rgba(0, 0, 0, 0.85);
+  --shadow-pop: 0 8px 30px -8px rgba(234, 115, 80, 0.45);
+
+  /* -- Motion -------------------------------------------------------------- */
+  --animate-rise: rise 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-fade: fade 0.35s ease-out both;
+  --animate-shimmer: shimmer 1.6s linear infinite;
+  --animate-breathe: breathe 2.6s ease-in-out infinite;
 }
 
+:root[data-theme="light"] {
+  --color-paper: #f7f6f4;
+  --color-paper-raised: #ffffff;
+  --color-paper-hover: #f1efec;
+  --color-paper-sunken: #efedea;
+
+  --color-ink: #16171c;
+  --color-ink-muted: #5b6070;
+  --color-ink-faint: #878d9c;
+
+  --color-line: rgba(22, 23, 28, 0.1);
+  --color-line-strong: rgba(22, 23, 28, 0.22);
+
+  --color-coral: #d2603c;
+  --color-coral-light: #b8502c;
+  --color-coral-dark: #8f3d21;
+  --color-violet: #6353d8;
+  --color-violet-light: #5344c4;
+
+  --color-fit-high: #2f7d52;
+  --color-fit-high-light: #2a6e48;
+  --color-fit-mid: #b5722a;
+  --color-fit-mid-light: #96601f;
+  --color-fit-low: #b13a32;
+  --color-fit-low-light: #9a2f28;
+
+  --shadow-card: 0 1px 2px rgba(22, 23, 28, 0.06), 0 10px 26px -18px rgba(22, 23, 28, 0.35);
+  --shadow-lift: 0 2px 6px rgba(22, 23, 28, 0.08), 0 20px 44px -22px rgba(22, 23, 28, 0.4);
+  --shadow-pop: 0 8px 26px -10px rgba(210, 96, 60, 0.5);
+}
+
+/* --------------------------------------------------------------------------
+   Keyframes
+   -------------------------------------------------------------------------- */
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes shimmer {
+  from {
+    background-position: -200% 0;
+  }
+  to {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes breathe {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Base
+   -------------------------------------------------------------------------- */
+
 @layer base {
-  html {
+  :root {
     color-scheme: dark;
+  }
+
+  :root[data-theme="light"] {
+    color-scheme: light;
   }
 
   body {
     @apply bg-paper text-ink font-sans antialiased;
     margin: 0;
     min-height: 100vh;
+    /* Two very soft brand washes, so a large empty area is never flat grey. */
+    background-image:
+      radial-gradient(
+        70rem 40rem at 12% -8%,
+        color-mix(in oklab, var(--color-coral) 11%, transparent),
+        transparent 60%
+      ),
+      radial-gradient(
+        60rem 36rem at 92% 4%,
+        color-mix(in oklab, var(--color-violet) 10%, transparent),
+        transparent 62%
+      );
+    background-attachment: fixed;
   }
 
   h1,
   h2,
   h3 {
     @apply font-serif font-semibold text-ink;
+    letter-spacing: -0.015em;
   }
 
   /* Visible focus for keyboard users on every interactive element. */
   :focus-visible {
     outline: 2px solid var(--color-coral);
     outline-offset: 2px;
+    border-radius: 6px;
   }
 
   ::selection {
-    background: rgba(204, 120, 92, 0.35);
+    background: color-mix(in oklab, var(--color-coral) 35%, transparent);
+  }
+
+  /* Scrollbars that belong to the theme rather than to the OS. */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-line-strong) transparent;
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-line-strong);
+    border-radius: 999px;
+    border: 3px solid transparent;
+    background-clip: content-box;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--color-ink-faint);
+    background-clip: content-box;
   }
 }
 
-@utility btn {
-  @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm
-    font-semibold transition-all disabled:cursor-not-allowed disabled:opacity-50;
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
+
+/* --------------------------------------------------------------------------
+   Utilities
+   -------------------------------------------------------------------------- */
+
+@utility btn {
+  @apply inline-flex shrink-0 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm
+    font-semibold whitespace-nowrap transition-all duration-200 disabled:cursor-not-allowed
+    disabled:opacity-45 disabled:shadow-none;
+}
+
+/* Gradient wash shared by the brand mark and the auth panel. */
+@utility brand-gradient {
+  background-image: linear-gradient(
+    135deg,
+    var(--color-coral) 0%,
+    var(--color-coral-dark) 55%,
+    var(--color-violet) 130%
+  );
+}
+
+/* --------------------------------------------------------------------------
+   Components
+   -------------------------------------------------------------------------- */
 
 @layer components {
   .card {
-    @apply bg-paper-raised border border-line rounded-2xl;
+    @apply rounded-card border border-line bg-paper-raised shadow-card;
+  }
+
+  /* Cards that are themselves a link or button target. `card` cannot be
+     @applied here — Tailwind v4 only resolves real utilities, not other
+     component classes — so the base is spelled out again. */
+  .card-interactive {
+    @apply rounded-card border border-line bg-paper-raised shadow-card transition-all duration-200;
+  }
+
+  .card-interactive:hover {
+    @apply -translate-y-0.5 border-line-strong shadow-lift;
   }
 
   .eyebrow {
-    @apply text-[0.72rem] font-bold uppercase tracking-[0.12em] text-coral-light;
+    @apply text-[0.7rem] font-bold tracking-[0.14em] text-coral-light uppercase;
   }
 
   .section-label {
-    @apply text-[0.72rem] font-bold uppercase tracking-[0.08em] text-ink-muted;
+    @apply text-[0.7rem] font-bold tracking-[0.1em] text-ink-muted uppercase;
   }
 
   .input {
     @apply w-full rounded-xl border border-line bg-paper-sunken px-3.5 py-2.5 text-ink
-      placeholder:text-ink-faint transition-colors;
+      transition-all duration-200 placeholder:text-ink-faint;
+  }
+
+  .input:hover:not(:disabled):not(:focus) {
+    @apply border-line-strong;
   }
 
   .input:focus {
-    @apply border-coral outline-none ring-3 ring-coral/20;
+    @apply border-coral bg-paper-raised ring-4 ring-coral/15 outline-none;
   }
 
   .btn-primary {
-    @apply btn bg-coral text-white shadow-[0_2px_6px_rgba(204,120,92,0.35)];
+    @apply btn text-white shadow-pop;
+    background-image: linear-gradient(135deg, var(--color-coral) 0%, var(--color-coral-dark) 100%);
   }
 
   .btn-primary:hover:not(:disabled) {
-    @apply bg-coral-light shadow-[0_4px_10px_rgba(204,120,92,0.45)];
+    @apply -translate-y-px brightness-110;
+  }
+
+  .btn-primary:active:not(:disabled) {
+    @apply translate-y-0 brightness-95;
   }
 
   .btn-secondary {
-    @apply btn border border-line bg-transparent text-ink;
+    @apply btn border border-line bg-paper-raised text-ink;
   }
 
   .btn-secondary:hover:not(:disabled) {
-    @apply border-coral text-coral-light;
+    @apply border-coral/50 bg-paper-hover text-coral-light;
   }
 
   .btn-ghost {
@@ -107,49 +309,97 @@
   }
 
   .btn-ghost:hover:not(:disabled) {
-    @apply text-ink;
+    @apply bg-paper-hover text-ink;
+  }
+
+  .btn-danger-ghost {
+    @apply btn bg-transparent text-ink-muted;
+  }
+
+  .btn-danger-ghost:hover:not(:disabled) {
+    @apply bg-fit-low/15 text-fit-low-light;
   }
 
   .pill {
-    @apply inline-block rounded-full border border-coral/25 bg-coral/15 px-3 py-1
-      text-[0.8rem] font-semibold text-coral-light;
+    @apply inline-block rounded-full border border-coral/25 bg-coral/12 px-2.5 py-1
+      text-[0.78rem] font-semibold text-coral-light;
+  }
+
+  /* Square icon-only affordance, for toolbars. */
+  .icon-btn {
+    @apply grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-line
+      bg-paper-raised text-ink-muted transition-all duration-200;
+  }
+
+  .icon-btn:hover:not(:disabled) {
+    @apply border-line-strong bg-paper-hover text-ink;
+  }
+
+  .skeleton {
+    @apply rounded-lg bg-paper-hover;
+    background-image: linear-gradient(
+      90deg,
+      transparent 0%,
+      color-mix(in oklab, var(--color-ink) 7%, transparent) 50%,
+      transparent 100%
+    );
+    background-size: 200% 100%;
+    animation: var(--animate-shimmer);
+  }
+
+  /* Frosted bar, used by the header and the sidebar. */
+  .glass {
+    background-color: color-mix(in oklab, var(--color-paper) 78%, transparent);
+    @apply backdrop-blur-xl;
   }
 }
 
-/* Rendered model output — react-markdown emits unstyled HTML, so the typography
-   rules live here rather than being repeated as className props. */
+/* --------------------------------------------------------------------------
+   Rendered model output — react-markdown emits unstyled HTML, so the
+   typography rules live here rather than as className props on every node.
+   -------------------------------------------------------------------------- */
+
 .markdown {
   @apply text-[0.94rem] leading-relaxed text-ink;
 }
 .markdown h2 {
-  @apply mt-6 mb-3 font-serif text-xl font-semibold first:mt-0;
+  @apply mt-7 mb-3 font-serif text-xl font-semibold first:mt-0;
 }
 .markdown h3 {
-  @apply mt-5 mb-2 font-serif text-base font-semibold text-coral-light;
+  @apply mt-6 mb-2 font-serif text-base font-semibold text-coral-light;
 }
 .markdown p {
   @apply my-3;
 }
 .markdown ul {
-  @apply my-3 list-disc space-y-1.5 pl-5;
+  @apply my-3 list-disc space-y-1.5 pl-5 marker:text-coral/70;
 }
 .markdown ol {
-  @apply my-3 list-decimal space-y-1.5 pl-5;
+  @apply my-3 list-decimal space-y-1.5 pl-5 marker:text-coral/70;
 }
 .markdown strong {
   @apply font-semibold text-ink;
 }
+.markdown blockquote {
+  @apply my-4 border-l-2 border-coral/50 pl-4 text-ink-muted italic;
+}
 .markdown hr {
-  @apply my-5 border-line;
+  @apply my-6 border-line;
 }
 .markdown a {
   @apply text-coral-light underline underline-offset-2;
 }
 .markdown code {
-  @apply rounded bg-paper-sunken px-1.5 py-0.5 text-[0.85em];
+  @apply rounded-md bg-paper-sunken px-1.5 py-0.5 text-[0.85em];
+}
+.markdown pre {
+  @apply my-4 overflow-x-auto rounded-xl border border-line bg-paper-sunken p-4;
 }
 .markdown table {
   @apply my-4 w-full border-collapse text-left text-sm;
+}
+.markdown th {
+  @apply bg-paper-sunken font-semibold;
 }
 .markdown th,
 .markdown td {

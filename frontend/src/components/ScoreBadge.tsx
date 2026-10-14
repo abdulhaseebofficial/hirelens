@@ -1,22 +1,36 @@
 import type { FitTier } from "@/types";
 
-const TIER_GRADIENT: Record<FitTier, string> = {
-  high: "from-fit-high-light to-fit-high",
-  mid: "from-coral to-coral-dark",
-  low: "from-fit-low-light to-fit-low",
+/**
+ * The fit score, drawn as a progress ring rather than a filled disc — the arc
+ * carries the 0-100 reading at a glance, so the number is confirmation rather
+ * than the only signal.
+ */
+
+const TIER_STROKE: Record<FitTier, string> = {
+  high: "text-fit-high-light",
+  mid: "text-coral-light",
+  low: "text-fit-low-light",
 };
 
 const TIER_SOLID: Record<FitTier, string> = {
   high: "bg-fit-high",
-  mid: "bg-coral-light",
+  mid: "bg-coral",
   low: "bg-fit-low",
 };
 
+const TIER_GLOW: Record<FitTier, string> = {
+  high: "shadow-[0_0_36px_-8px_var(--color-fit-high)]",
+  mid: "shadow-[0_0_36px_-8px_var(--color-coral)]",
+  low: "shadow-[0_0_36px_-8px_var(--color-fit-low)]",
+};
+
 const SIZES = {
-  sm: "h-14 w-14 text-lg",
-  md: "h-20 w-20 text-2xl",
-  lg: "h-30 w-30 text-4xl",
+  sm: { box: "h-14 w-14", value: "text-lg", caption: "hidden", stroke: 7 },
+  md: { box: "h-20 w-20", value: "text-2xl", caption: "text-[0.55rem]", stroke: 7 },
+  lg: { box: "h-32 w-32", value: "text-4xl", caption: "text-[0.6rem]", stroke: 6 },
 } as const;
+
+const RADIUS = 50;
 
 interface ScoreBadgeProps {
   score: number | null;
@@ -26,15 +40,51 @@ interface ScoreBadgeProps {
 
 export function ScoreBadge({ score, tier, size = "md" }: ScoreBadgeProps) {
   const resolvedTier = tier ?? "mid";
+  const { box, value, caption, stroke } = SIZES[size];
+
+  // The ring is drawn on a 0-120 viewBox so `stroke` reads as a percentage of
+  // the badge regardless of the rendered pixel size.
+  const circumference = 2 * Math.PI * RADIUS;
+  const filled = ((score ?? 0) / 100) * circumference;
+
   return (
     <div
-      className={`flex shrink-0 items-center justify-center rounded-full bg-gradient-to-br
-        font-serif font-bold text-white shadow-[0_6px_16px_rgba(0,0,0,0.35)]
-        ${TIER_GRADIENT[resolvedTier]} ${SIZES[size]}`}
+      className={`relative grid shrink-0 place-items-center rounded-full bg-paper-raised
+        ${box} ${TIER_GLOW[resolvedTier]}`}
       role="img"
       aria-label={score === null ? "Score unavailable" : `Fit score ${score} out of 100`}
     >
-      {score ?? "?"}
+      <svg viewBox="0 0 120 120" className="absolute inset-0 h-full w-full -rotate-90">
+        <circle
+          cx="60"
+          cy="60"
+          r={RADIUS}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={stroke}
+          className="text-line"
+        />
+        <circle
+          cx="60"
+          cy="60"
+          r={RADIUS}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={stroke}
+          strokeLinecap="round"
+          strokeDasharray={`${filled} ${circumference}`}
+          className={`${TIER_STROKE[resolvedTier]} transition-[stroke-dasharray] duration-1000 ease-out`}
+        />
+      </svg>
+
+      <div className="relative flex flex-col items-center leading-none">
+        <span className={`font-serif font-bold text-ink tabular-nums ${value}`}>
+          {score ?? "?"}
+        </span>
+        <span className={`mt-1 font-bold tracking-[0.14em] text-ink-faint uppercase ${caption}`}>
+          / 100
+        </span>
+      </div>
     </div>
   );
 }
@@ -43,7 +93,7 @@ export function VerdictPill({ verdict, tier }: { verdict: string | null; tier: F
   if (!verdict) return null;
   return (
     <span
-      className={`inline-block rounded-full px-3.5 py-1 text-[0.8rem] font-bold text-white
+      className={`inline-block rounded-full px-3.5 py-1 text-[0.78rem] font-bold text-white
         ${TIER_SOLID[tier ?? "mid"]}`}
     >
       {verdict}

@@ -24,17 +24,17 @@ from app.services.pdf import truncate
 logger = get_logger(__name__)
 
 
-async def run_analysis(analysis_id: str) -> None:
+async def run_analysis(analysis_id: str, api_key: str | None = None) -> None:
     """Entry point for BackgroundTasks. Never raises into the caller."""
     try:
         async with SessionFactory() as db:
-            await _execute(db, analysis_id)
+            await _execute(db, analysis_id, api_key=api_key)
     except Exception as exc:  # a crash here must not take the server down
         logger.exception("Analysis %s crashed: %s", analysis_id, exc)
         await _mark_failed(analysis_id, str(exc))
 
 
-async def _execute(db: AsyncSession, analysis_id: str) -> None:
+async def _execute(db: AsyncSession, analysis_id: str, api_key: str | None = None) -> None:
     analysis = (
         await db.execute(
             select(Analysis)
@@ -60,7 +60,7 @@ async def _execute(db: AsyncSession, analysis_id: str) -> None:
     semaphore = asyncio.Semaphore(max(1, settings.analysis_concurrency))
 
     results = await asyncio.gather(
-        *(_process_candidate(candidate, jd_text, semaphore) for candidate in pending),
+        *(_process_candidate(candidate, jd_text, semaphore, api_key=api_key) for candidate in pending),
         return_exceptions=True,
     )
 
@@ -76,7 +76,7 @@ async def _execute(db: AsyncSession, analysis_id: str) -> None:
 
 
 async def _process_candidate(
-    candidate: Candidate, jd_text: str, semaphore: asyncio.Semaphore
+    candidate: Candidate, jd_text: str, semaphore: asyncio.Semaphore, api_key: str | None = None
 ) -> dict:
     """Run fit score + snapshot for one CV. Pure — the caller writes to the DB."""
     async with semaphore:
@@ -86,8 +86,8 @@ async def _process_candidate(
 
         # Both calls are independent, so overlap them.
         fit_markdown, snapshot_raw = await asyncio.gather(
-            gemini.generate(prompts.fit_score_prompt(cv_text, jd_text), purpose="fit-score"),
-            gemini.generate(prompts.snapshot_prompt(cv_text), purpose="snapshot"),
+            gemini.generate(prompts.fit_score_prompt(cv_text, jd_text), purpose="fit-score", api_key=api_key),
+            gemini.generate(prompts.snapshot_prompt(cv_text), purpose="snapshot", api_key=api_key),
         )
 
         parsed, _ = parsing.parse_json_object(snapshot_raw)
